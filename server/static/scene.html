@@ -3,45 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bugbear Banter - Scene Setup</title>
+    <title>Bugbear Banter - Active Scene</title>
     <link rel="stylesheet" href="/static/css/style.css"> <link rel="stylesheet" href="/static/css/scene.css"> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="page-container">
+    <div class="page-container scene-page-container">
         <header class="jrpg-header">
-            <h1>Scene Configuration</h1>
+            <h1>Active Scene</h1>
+            <p id="current-scene-description-display">Scene context will appear here...</p>
         </header>
 
-        <main class="scene-main-container">
-            <div class="scene-setup jrpg-box">
-                <h2>Selected Participants:</h2>
-                <div id="scene-participants-list" class="participants-container">
-                    <p>Loading participants...</p>
-                </div>
-
-                <h2>Scene Description:</h2>
-                <textarea id="scene-description-textarea" class="jrpg-textarea" rows="6" placeholder="Describe the current situation, setting, and any initial actions or context for the NPCs..."></textarea>
-                <button id="generate-dialogue-button" class="jrpg-button">Start Conversation</button>
+        <main class="scene-main-content">
+            <div id="npc-interaction-area" class="npc-interaction-grid">
+                <p class="loading-npcs-message">Loading participant interfaces...</p>
             </div>
 
-            <div class="dialogue-area jrpg-box">
-                <h2>Conversation Log</h2>
-                <div id="conversation-log-container" class="jrpg-chat-log">
-                    <p class="log-placeholder">The stage is set. Click "Start Conversation" to begin.</p>
-                </div>
-            </div>
-
-            <div class="dialogue-controls-sidebar jrpg-box">
-                <h3>Dialogue Controls</h3>
-                <button class="jrpg-button-small" id="btn-submit-memory" title="Commit the last exchange to this NPC's memory (simulated).">Submit to Memory</button>
-                <button class="jrpg-button-small" id="btn-undo-memory" title="Remove the last submitted exchange from memory (simulated).">Undo Last from Memory</button>
-                <hr class="jrpg-divider">
-                <button class="jrpg-button-small" id="btn-next-topic" title="Advance to the next generated topic.">Next Topic</button>
-                <button class="jrpg-button-small" id="btn-regen-topics" title="Generate a new set of conversation topics.">Regenerate Topics</button>
-                <hr class="jrpg-divider">
-                <button class="jrpg-button-small" id="btn-show-top5" title="Display the top 5 most likely next dialogue lines or topics.">Show Top 5 Options</button>
-                <button class="jrpg-button-small" id="btn-show-tree" title="Visualize the conversation flow (future feature).">Show Conversation Tree</button>
-                <div id="current-topic-display" class="topic-display">Current Topic: N/A</div>
+            <div class="scene-input-area jrpg-box">
+                <h2>Scene Setup & Narration</h2>
+                <textarea id="scene-description-textarea" class="jrpg-textarea" rows="5" placeholder="Describe the current situation, setting, or narrate an event..."></textarea>
+                <button id="start-scene-button" class="jrpg-button">Initiate Scene / Narrate</button>
             </div>
         </main>
 
