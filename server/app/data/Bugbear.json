@@ -1,5 +1,4 @@
 {
-  "character_details": {
     "name": "Bug",
     "race": "Bugbear", 
     "class": "Guardsman", 
@@ -29,4 +28,3 @@
       "relationships_with_pcs": "Don’t trust ‘em, but Bug *likes* watchin' ‘em. One gave Bug a book once. Bug didn’t read it—but he hid it under his bed. Might help ‘em escape. Might sell ‘em out. Bug ain't sure yet."
     }
   }
-}

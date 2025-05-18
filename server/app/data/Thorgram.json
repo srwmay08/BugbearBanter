@@ -1,5 +1,4 @@
 {
-  "character_details": {
     "name": "Thorgram Coppermantle",
     "race": "Gold Dwarf",
     "class": "Blacksmith-Priest of Moradin",
@@ -29,4 +28,4 @@
       "relationships_with_pcs": "Treats warriors like apprentices and scholars like wayward lads. Offers guidance, rebukes arrogance, and protects innocents. Will fight beside them if their cause aligns with Moradin’s will—and if they respect the craft."
     }
   }
-}
+

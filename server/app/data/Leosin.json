@@ -1,5 +1,4 @@
 {
-  "character_details": {
     "name": "Leosin Erlanthar",
     "race": "Half-Elf",
     "class": "Monk",
@@ -29,4 +28,4 @@
       "relationships_with_pcs": "Initially reserved, but grows to trust players who show moral clarity and discipline. Offers subtle guidance, rarely commands. Honors their choices even when he disagrees."
     }
   }
-}
+
