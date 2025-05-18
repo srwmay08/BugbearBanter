@@ -3,18 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bugbear Banter - Select NPC</title>
-    <link rel="stylesheet" href="/static/css/style.css">  </head>
+    <title>Bugbear Banter - Select NPCs for Scene</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+</head>
 <body>
-    <header>
-        <h1>Choose Your Conversant</h1>
-    </header>
-    <main>
-        <div id="npc-selection-area" class="jrpg-list-container">
+    <div class="page-container">
+        <header class="jrpg-header">
+            <h1>Choose Conversants</h1>
+            <p>Select the NPCs to participate in the upcoming scene.</p>
+        </header>
+
+        <main class="npc-selection-main">
+            <div id="npc-selection-area" class="npc-grid-container">
+                <p class="loading-message">Loading NPCs...</p>
             </div>
-    </main>
-    <footer>
-        <p>Bugbear Banter</p>
-    </footer>
-    <script src="/static/js/app.js"></script> </body>
+        </main>
+
+        <div class="selection-controls jrpg-box">
+            <h2>Selected NPCs:</h2>
+            <ul id="selected-npc-list">
+                <li id="no-npcs-selected">None yet. Click an NPC to select.</li>
+            </ul>
+            <button id="proceed-to-scene-button" class="jrpg-button" disabled>Set Scene</button>
+        </div>
+
+        <footer class="jrpg-footer">
+            <p>Bugbear Banter - Alpha</p>
+        </footer>
+    </div>
+    <script src="/static/js/app.js"></script>
+</body>
 </html>
