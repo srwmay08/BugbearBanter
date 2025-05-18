@@ -1,18 +1,22 @@
-# ---- server/app/config.py ----
+# server/app/config.py
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai # Make sure this import is present
+import google.generativeai as genai # Ensure this import is here
 
-load_dotenv() # <<< MOVED HERE - Load environment variables from .env FIRST
+load_dotenv() # Load environment variables from .env file
 
 # Configure API Key for Google Generative AI
-# This key is used for genai.configure()
-GEMINI = os.getenv("GEMINI", "").strip()
-if not GEMINI_API_KEY:
-    raise ValueError("Missing GEMINI. Set it in your .env file or as an environment variable.")
+# Fetch the key from environment (loaded by load_dotenv() or set in terminal)
+# and assign it to the Python variable GEMINI_API_KEY.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 
+# Now, check if the Python variable GEMINI_API_KEY is empty
+if not GEMINI_API_KEY: # This is your line 11 (or around there)
+    raise ValueError("Missing GEMINI_API_KEY. Set it in your .env file or as an environment variable.")
+
+# If the script proceeds, GEMINI_API_KEY has a value
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash") # Assuming you still want this model
 
 NPC_DIR = "npc_data"
 
@@ -22,14 +26,20 @@ class Config:
     MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/ttrpg_app_db')
     DEBUG = False
     TESTING = False
-    # This is a separate key, potentially for other uses or if you want to use a different name in .env for Flask config
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+    # You can decide if you still need this separate Config.GEMINI_API_KEY or if the one above is sufficient
+    # If the GEMINI_API_KEY loaded above is the one you want to use throughout,
+    # you might not need to fetch it again here unless it serves a different purpose.
+    # For now, let's assume the GEMINI_API_KEY above is the primary one.
+    # You could reference it here or fetch it again if necessary.
+    # Example: self.GEMINI_API_KEY = GEMINI_API_KEY (if you want to store it in the config object)
+    # Or, if it's only used for genai.configure, you might not need it in the Config class instances.
+
     ELEVENLABS_API_KEY = os.getenv('ELEVENLABS_API_KEY')
     PATREON_CLIENT_ID = os.getenv('PATREON_CLIENT_ID')
     PATREON_CLIENT_SECRET = os.getenv('PATREON_CLIENT_SECRET')
     # Add other configuration variables here
 
-# ... rest of your config.py file (DevelopmentConfig, TestingConfig, etc.) ...
+# ... rest of your config file (DevelopmentConfig, TestingConfig, etc.) ...
 
 class DevelopmentConfig(Config):
     """Development configuration."""
