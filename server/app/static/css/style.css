@@ -1,0 +1,55 @@
+@import url('https_fonts_googleapis_com_css2_family=your-chosen-handwritten-font_family=your-jrpg-pixel-font&display=swap'); /* Replace with actual font imports */
+
+body {
+    background-color: #D2B48C; /* Tan */
+    font-family: 'your-chosen-handwritten-font', sans-serif; /* Handdrawn font */
+    color: #4A3B31; /* Dark brown for text */
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header h1 {
+    font-family: 'your-jrpg-pixel-font', fantasy; /* JRPG title font */
+    font-size: 2.5em;
+    color: #8B4513; /* SaddleBrown or similar */
+    text-shadow: 2px 2px #A0522D; /* Sienna for a simple shadow */
+    margin-bottom: 20px;
+}
+
+.jrpg-list-container {
+    background-color: #F5DEB3; /* Wheat - lighter tan for content area */
+    border: 5px solid transparent; /* Transparent base for image border */
+    border-image: url('/static/images/jrpg_frame.png') 30 round; /* Example: Needs jrpg_frame.png */
+    /* Alternatively, use CSS borders for a hand-drawn look */
+    /* border: 3px solid #8B4513; */
+    /* border-radius: 5px; /* Slightly rounded for hand-drawn feel */
+    padding: 20px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+}
+
+.npc-card {
+    background-color: #FAF0E6; /* Linen - very light tan for cards */
+    border: 2px dashed #A0522D; /* Dashed or 'stitched' border */
+    padding: 15px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.npc-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 8px 15px rgba(74, 59, 49, 0.3);
+}
+
+.npc-card h3 {
+    font-family: 'your-jrpg-pixel-font', fantasy;
+    color: #5D4037; /* Darker brown for NPC names */
+    margin-top: 0;
+}
+
+/* Add styles for buttons, scrollbars, etc. */
