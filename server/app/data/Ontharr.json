@@ -1,0 +1,32 @@
+{
+  "character_details": {
+    "name": "Ontharr Frume",
+    "race": "Human",
+    "class": "Paladin",
+    "alignment": "Lawful Good",
+    "age": "51 years",
+    "personality_and_backstory": {
+      "personality_traits": [
+        "Boisterous",
+        "Stubborn",
+        "Deeply honorable",
+        "Quick to laugh",
+        "Fiercely loyal"
+      ],
+      "ideals": "Stand up to evil, no matter the odds. The strong protect the weak. Glory is found in righteous deeds, not hollow victory.",
+      "bonds": "Bound by oath to Moradin and the Order of the Gauntlet. Protects the weak and punishes the corrupt with equal fervor.",
+      "flaws": "Can be brash and impatient. Often leaps before thinking. Dislikes subtlety and distrusts those who work in shadows.",
+      "backstory": "A former mercenary turned paladin after witnessing a massacre in Thay. Joined the Order of the Gauntlet to strike down evil in all its forms. Known in Elturel for wrestling a manticore and drinking it under the table.",
+      "motivations": "To forge a righteous alliance of like-minded heroes to confront the Cult of the Dragon. Dreams of a world where no one need fear evil's shadow."
+    },
+    "speech_and_mannerisms": {
+      "speech_patterns": "Loud, hearty, and full of metaphors—many involving hammers, anvils, or spilled ale. Shouts greetings like battle cries.",
+      "mannerisms": "Claps backs hard enough to knock the wind out of a bard. Always eats with both hands. Has a belly laugh that echoes down tavern halls."
+    },
+    "in_game_details": {
+      "past_situation": "Currently commanding a chapter of the Order of the Gauntlet in Elturel. Keeps eyes on cult movements and lends aid to adventurers ready to fight for justice.",
+      "current_situation": "Allies with Leosin to form a multi-faction coalition against the Cult. Hosts war councils in taverns and temples alike. Sees strength in unity.",
+      "relationships_with_pcs": "Quick to embrace bold warriors, but skeptical of rogues or mages until they prove their valor. Encourages players to live heroically—and preferably loudly."
+    }
+  }
+}

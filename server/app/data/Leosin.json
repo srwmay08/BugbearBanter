@@ -1,0 +1,32 @@
+{
+  "character_details": {
+    "name": "Leosin Erlanthar",
+    "race": "Half-Elf",
+    "class": "Monk",
+    "alignment": "Lawful Good",
+    "age": "43 years",
+    "personality_and_backstory": {
+      "personality_traits": [
+        "Patient",
+        "Scholarly",
+        "Measured in speech and motion",
+        "Intensely focused",
+        "Secretive for the greater good"
+      ],
+      "ideals": "Knowledge is the surest weapon against tyranny. Truth must be preserved, even when painful.",
+      "bonds": "Sworn to the Harpers and their cause. Seeks to dismantle the Cult of the Dragon before it plunges the world into darkness.",
+      "flaws": "Tends to shoulder burdens alone. Hesitates to endanger others even when their help is vital. Harbors guilt from past failures.",
+      "backstory": "Born in Berdusk to a human historian and elven monk, Leosin was raised among scrolls and disciplines. After uncovering the earliest signs of cult resurgence, he dedicated himself to infiltration, research, and warning others—no matter the cost.",
+      "motivations": "To expose the Cult’s structure, identify its leaders, and stop the rise of Tiamat. Believes the heroes of the age must be guided, trained, and protected."
+    },
+    "speech_and_mannerisms": {
+      "speech_patterns": "Speaks with quiet precision. Rarely wastes words. Often pauses before answering, as if considering five answers and choosing the most instructive.",
+      "mannerisms": "Strokes his chin while thinking. When anxious, fingers the edge of his Harper pin. Keeps a journal within arm's reach at all times."
+    },
+    "in_game_details": {
+      "past_situation": "Captured by the Cult while investigating their caravans. Endured torture to protect secrets and gather intelligence, eventually rescued by adventurers.",
+      "current_situation": "Reestablishing Harper networks, advising key allies, and keeping tabs on cult movements along the Sword Coast. Sees the player characters as crucial pawns—and possibly queens—in the war to come.",
+      "relationships_with_pcs": "Initially reserved, but grows to trust players who show moral clarity and discipline. Offers subtle guidance, rarely commands. Honors their choices even when he disagrees."
+    }
+  }
+}

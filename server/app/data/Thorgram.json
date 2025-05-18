@@ -1,0 +1,32 @@
+{
+  "character_details": {
+    "name": "Thorgram Coppermantle",
+    "race": "Gold Dwarf",
+    "class": "Blacksmith-Priest of Moradin",
+    "alignment": "Lawful Good",
+    "age": "136 years",
+    "personality_and_backstory": {
+      "personality_traits": [
+        "Stubborn", 
+        "Pious", 
+        "Disciplined", 
+        "Proud", 
+        "Compassionate beneath a stern exterior"
+      ],
+      "ideals": "The soul is forged in fire, same as steel. What we build in life must outlast us—or it ain’t worth the sweat.",
+      "bonds": "My clan’s name—Coppermantle—must be restored to the old glories of the Deep Halls. I’ll craft a weapon worthy of legend, or I’ll perish in the heat tryin’.",
+      "flaws": "Will not admit weakness, even when it costs him. Holds grudges like an anvil holds heat. Too proud to ask Moradin for guidance when his faith falters.",
+      "backstory": "Raised in the stone halls of Khur Uldar after the fall of our ancestral forge. My father taught me the hammer, my mother taught me the hymn. When the anvil rang, so did my heart. I took up the mantle of priest after a cave-in trapped twenty dwarves—and only my prayers brought ‘em home.",
+      "motivations": "To reforge what was broken—clan, legacy, and blade. Moradin guides my hands, but I seek the spark within myself to become not just a smith, but a creator of wonders."
+    },
+    "speech_and_mannerisms": {
+      "speech_patterns": "Measured and rhythmic, like the ring of his hammer. Uses old dwarven idioms (‘By the forge’s flame,’ ‘Hotter than a dragon’s breath on forge-day’). Recites Moradin’s proverbs when offering advice or judgment.",
+      "mannerisms": "Constantly polishing a small forge-hammer amulet. Taps foot like a smith checking bellows pressure. Brushes beard with fingers when contemplative. Smells faintly of soot and divine incense."
+    },
+    "in_game_details": {
+      "past_situation": "Served as the Forgewarden of a ruined temple beneath the Spine of the World. Repelled duergar, reforged shattered relics, and trained acolytes in both battle and bronze.",
+      "current_situation": "Now runs a humble forge in a surface town, hiding deep roots. Offers weapons, armor, and blessings—but secretly builds a holy artifact known only as the Soulforge Blade.",
+      "relationships_with_pcs": "Treats warriors like apprentices and scholars like wayward lads. Offers guidance, rebukes arrogance, and protects innocents. Will fight beside them if their cause aligns with Moradin’s will—and if they respect the craft."
+    }
+  }
+}

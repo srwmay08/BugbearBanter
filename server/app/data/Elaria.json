@@ -1,0 +1,32 @@
+{
+  "character_details": {
+    "name": "Elaria Vaenys",
+    "race": "Half-Elf",
+    "class": "Cleric of Sune",
+    "alignment": "Chaotic Good",
+    "age": "29 years",
+    "personality_and_backstory": {
+      "personality_traits": [
+        "Charming", 
+        "Empathetic", 
+        "Unapologetically Passionate", 
+        "Artistic", 
+        "Disarming but clever"
+      ],
+      "ideals": "Beauty is not a luxury—it is a holy truth. Love, art, and passion are divine forces that can mend the world.",
+      "bonds": "I maintain a shrine to Sune in the Castle Ward, filled with art, candles, and the hopes of lovers. I keep every love letter ever written to me—each one a sacred spark.",
+      "flaws": "Vain to a fault—struggles to accept ugliness in any form, especially emotional cruelty. Easily distracted by beauty and flattery. Hates being alone.",
+      "backstory": "Born in Waterdeep to an elven artist and a human perfumer, I was raised in a swirl of color, song, and stories. When I first healed someone with nothing but a kiss and a prayer to Sune, I knew my path. The House of Inspired Hands taught me divine rites—but I made them dance with silk and rosewater.",
+      "motivations": "To bring joy, love, and beauty to lives dimmed by hardship. To inspire greatness in others through affection and faith. And to find, perhaps, a love worthy of legend."
+    },
+    "speech_and_mannerisms": {
+      "speech_patterns": "Lyrical and warm, as if every sentence were a verse in a love poem. Uses terms of endearment often—'darling,' 'my spark,' 'sweetheart.' Her voice lilts like a harp string.",
+      "mannerisms": "Touches hearts and shoulders as she speaks. Gestures with her holy symbol—a golden locket of Sune’s face. Often smells of rosewater or lilac. Keeps a tiny hand-mirror tucked in her robes."
+    },
+    "in_game_details": {
+      "past_situation": "Served in the House of Beauty in Waterdeep, where she blessed unions, healed broken hearts, and helped artists find divine inspiration. Once helped end a noble family's feud by orchestrating a masquerade reconciliation.",
+      "current_situation": "Now travels among Waterdeep’s districts—especially the Dock Ward and Field Ward—spreading light where shadows linger. Maintains secret trysts, paints portraits of the poor, and hosts open-mic poetry nights beneath a temple balcony.",
+      "relationships_with_pcs": "Sees the party as flawed but beautiful souls in need of warmth and healing. Will go to great lengths to keep them safe—but insists they tell her their dreams and heartbreaks. Offers blessings that stir the soul and embolden the heart."
+    }
+  }
+}
