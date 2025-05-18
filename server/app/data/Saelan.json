@@ -1,0 +1,104 @@
+{
+    "name": "Saelan Fael'quess",
+    "race": "Half-Elf (High Elf Heritage)",
+    "class": "Bard",
+    "subclass": "College of Eloquence",
+    "background": "Charlatan",
+    "alignment": "Chaotic Neutral",
+    "level": 1,
+    "stats": {
+      "strength": 10,
+      "dexterity": 14,
+      "constitution": 12,
+      "intelligence": 13,
+      "wisdom": 10,
+      "charisma": 17
+    },
+    "skills": {
+      "acrobatics": 2,
+      "animal_handling": 0,
+      "arcana": 1,
+      "athletics": 0,
+      "deception": 5,
+      "history": 1,
+      "insight": 0,
+      "intimidation": 3,
+      "investigation": 1,
+      "medicine": 0,
+      "nature": 1,
+      "perception": 0,
+      "performance": 5,
+      "persuasion": 5,
+      "religion": 1,
+      "sleight_of_hand": 2,
+      "stealth": 2,
+      "survival": 0
+    },
+    "proficiencies": {
+      "armor": ["Light Armor"],
+      "weapons": ["Simple Weapons", "Hand Crossbows", "Longswords", "Rapiers", "Shortswords"],
+      "tools": ["Disguise Kit", "Forgery Kit", "Lute"],
+      "saving_throws": ["Dexterity", "Charisma"]
+    },
+    "languages": ["Common", "Elvish", "Sylvan"],
+    "equipment": {
+      "weapons": [
+        {
+          "name": "Rapier",
+          "attack_bonus": 4,
+          "damage": "1d8+2 piercing"
+        }
+      ],
+      "armor": "Leather Armor",
+      "gear": ["Signet Ring", "Fine Clothes", "Disguise Kit", "Forgery Kit", "Lute"]
+    },
+    "features": {
+      "racial": [
+        "Darkvision (60 ft)",
+        "Fey Ancestry (Advantage on saving throws against being charmed, immune to magical sleep)"
+      ],
+      "class": [
+        "Bardic Inspiration (d6)"
+      ],
+      "background": [
+        "False Identity (Can assume a second persona with established credentials)"
+      ]
+    },
+    "spells": {
+      "cantrips": [
+        "Message",
+        "Vicious Mockery"
+      ],
+      "level_1": [
+        "Charm Person",
+        "Healing Word",
+        "Heroism",
+        "Hideous Laughter"
+      ]
+    },
+    "backstory": {
+      "origin": "Waterdeep's Castle Ward, Bazaar Street",
+      "family": {
+        "mother": "Winette the Whispering Wind, a singer at the Singing Sword",
+        "father": "Unknown Sun Elf, possibly part of a secretive community"
+      },
+      "mentors": [
+        "Old Man Merris Haddock, a retired sailor who taught storytelling",
+        "Maeva the Barmaid, who taught him street smarts"
+      ],
+      "noble_façade": {
+        "house": "Quelanara",
+        "business": "The Cormanthyr Archive & Appraisal Consortium"
+      },
+      "threats": [
+        "Eldreth Veluuthra, an elven supremacist group that might discover his deception"
+      ],
+      "goals": [
+        "Maintain his noble persona",
+        "Amass wealth and status",
+        "Earn genuine recognition",
+        "Trust someone enough to reveal his true identity"
+      ]
+    }
+  }
+  
