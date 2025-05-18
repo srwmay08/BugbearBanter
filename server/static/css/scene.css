@@ -1,206 +1,224 @@
 /* static/css/scene.css */
 
-.scene-main-container {
-    display: grid;
-    grid-template-columns: 1fr 300px; /* Main content and a sidebar for controls */
-    gap: 20px;
-    align-items: flex-start; /* Align items to the top of their grid area */
+/* Inherits base JRPG styles from style.css (e.g., .page-container, .jrpg-header, .jrpg-button, .jrpg-footer) */
+
+.scene-page-container {
+    /* Specific overrides for scene page if needed, e.g., different max-width */
+    max-width: 1400px; /* Allow wider layout for multiple NPC columns */
 }
 
-.scene-setup, .dialogue-area {
-    margin-bottom: 20px; /* Keep some margin if they stack on smaller screens */
-}
-
-.dialogue-controls-sidebar {
-    /* Styles for the sidebar itself are in main_styles_updated.css via .jrpg-box */
-    /* This class is more for targeting if needed, or for grid placement */
-}
-
-.participants-container {
+.scene-main-content {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-    padding: 10px;
-    background-color: #3e3a50; /* Slightly darker inset background */
-    border-radius: 4px;
-    min-height: 70px; /* So it has some presence */
+    flex-direction: column; /* Stack NPC interaction area and then scene input area */
+    gap: 25px; /* Space between the main sections */
 }
 
-.participant-chip {
+#current-scene-description-display {
+    font-size: 1em; /* Or 1.1em if you prefer */
+    color: #c0c0c0; /* Light grey for readability */
+    margin-top: 5px;
+    font-style: italic;
+    min-height: 1.2em; /* Prevent layout shift when text is populated */
+    text-align: center; /* Center the scene description display */
+    padding: 5px;
+    background-color: rgba(0,0,0,0.1); /* Subtle background */
+    border-radius: 4px;
+}
+
+.loading-npcs-message {
+    text-align: center;
+    font-size: 1.2em;
+    padding: 30px;
+    color: #a0a0a0; /* Muted color for loading text */
+}
+
+.npc-interaction-grid {
+    display: grid;
+    /* Create as many columns as fit, each at least 320px wide, max 1fr */
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px; /* Space between individual NPC containers */
+    width: 100%;
+}
+
+.npc-dialogue-container {
+    background-color: #4a4660; /* Darker box background, consistent with .jrpg-box */
+    border: 2px solid #6a4a8a; /* JRPG purple accent */
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.2); /* Inner and outer shadow */
+    display: flex;
+    flex-direction: column; /* Stack header, log, controls vertically */
+    min-height: 350px; /* Minimum height for each NPC box */
+}
+
+.npc-header {
     display: flex;
     align-items: center;
-    background-color: #595377;
-    padding: 5px 10px;
-    border-radius: 15px; /* Pill shape */
-    border: 1px solid #8a6fab;
-    font-size: 0.9em;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #595377; /* Subtle separator */
 }
 
-.participant-chip img {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    margin-right: 8px;
-    border: 1px solid #6a4a8a;
-    object-fit: cover;
+.npc-header-portrait {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%; /* Circular portrait */
+    object-fit: cover; /* Ensure image covers the area well */
+    border: 2px solid #8a6fab; /* Accent border */
+    margin-right: 12px;
+    flex-shrink: 0; /* Prevent portrait from shrinking if name is long */
+    background-color: #3e3a50; /* Fallback if image fails */
 }
 
-.jrpg-textarea {
-    width: calc(100% - 24px); /* Full width minus padding */
+.npc-header-name {
+    font-family: 'Press Start 2P', cursive; /* Pixel font for NPC names */
+    font-size: 1.1em; /* Slightly larger for emphasis */
+    color: #ffe066; /* Light gold, stands out */
+    text-shadow: 1px 1px #222; /* Subtle shadow for depth */
+}
+
+.npc-chat-log { /* Individual log for each NPC */
+    flex-grow: 1; /* This makes the chat log take available vertical space */
+    min-height: 180px; /* Minimum height for the chat log area */
+    max-height: 350px; /* Maximum height before scrolling */
+    overflow-y: auto; /* Enable vertical scrollbar if content exceeds max-height */
     padding: 10px;
-    margin-bottom: 15px;
-    background-color: #3e3a50;
-    border: 2px solid #6a4a8a;
-    color: #e0e0e0;
-    font-family: 'VT323', monospace;
-    font-size: 1.1em;
+    background-color: #3e3a50; /* Darker, inset background for the log */
     border-radius: 4px;
-    min-height: 100px; /* Decent starting height */
+    border: 1px solid #595377; /* Inner border */
+    margin-bottom: 15px; /* Space before the controls */
 }
-
-.jrpg-textarea:focus {
-    outline: none;
-    border-color: #7b50ba;
-    box-shadow: 0 0 8px rgba(123, 80, 186, 0.5);
-}
-
-.jrpg-chat-log {
-    min-height: 200px;
-    max-height: 400px; /* Or adjust as needed */
-    overflow-y: auto;
-    padding: 10px;
-    background-color: #3e3a50;
-    border-radius: 4px;
-    border: 1px solid #595377;
-}
-
-.log-placeholder {
-    color: #a0a0a0;
+.npc-chat-log .log-placeholder { /* Placeholder text within individual logs */
+    color: #888;
     font-style: italic;
     text-align: center;
-    padding: 20px;
+    padding: 15px;
+    font-size: 0.9em;
 }
 
+/* Chat entry styles (ensure these are comprehensive) */
 .chat-entry {
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 6px;
-    display: flex;
-    align-items: flex-start; /* Align portrait with top of text */
+    margin-bottom: 12px;
+    padding: 0px; /* Padding will be on the bubble */
+    display: flex; /* For potential future use with GM/Player messages */
+    max-width: 100%; 
 }
 
-.chat-entry.npc .chat-bubble {
-    background-color: #595377; /* NPC speech bubble color */
+/* Specific styling for NPC's own lines in their box */
+.chat-entry.npc .chat-bubble { 
+    background-color: #595377; 
     border: 1px solid #8a6fab;
-    margin-left: 10px; /* Space from portrait */
+    /* NPCs lines are typically left-aligned by default in their own box */
 }
-.chat-entry.player .chat-bubble { /* If you add player input later */
-    background-color: #4e6470; /* Player speech bubble color */
+
+/* Styling for GM narration or Player input if added later */
+.chat-entry.gm .chat-bubble, 
+.chat-entry.player .chat-bubble { 
+    background-color: #4e6470; 
     border: 1px solid #6f8ea0;
-    margin-right: 10px;
+    margin-left: auto; /* Align GM/Player messages to the right */
+    max-width: 85%; /* Don't let player/gm bubbles take full width */
 }
 
-
-.chat-portrait {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #6a4a8a;
-    flex-shrink: 0; /* Prevent shrinking */
+.chat-entry.system .chat-bubble {
+    background-color: #333;
+    border: 1px solid #555;
+    font-style: italic;
+    color: #aaa;
+    text-align: center;
+    width: 100%; /* System messages can span full width */
+    padding: 5px 8px;
+    font-size: 0.85em;
 }
 
-.chat-bubble {
+.chat-bubble { /* General bubble style */
     padding: 10px 15px;
     border-radius: 8px;
-    flex-grow: 1;
+    /* flex-grow: 1; /* Let bubble take available horizontal space */
+    /* word-wrap: break-word; /* Ensure long words break */
+    /* overflow-wrap: break-word; */
 }
 
-.chat-bubble .speaker-name {
+/* Speaker name inside the bubble (useful if GM/System messages appear in NPC log) */
+.chat-bubble .speaker-name { 
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.9em;
-    color: #ffcc00;
+    font-size: 0.8em; 
+    color: #ffcc00; /* Gold for speaker name */
     margin-bottom: 5px;
     display: block;
 }
-
 .chat-bubble .dialogue-text {
     font-size: 1em;
-    line-height: 1.5;
-    color: #e0e0e0;
-    white-space: pre-wrap; /* Preserve line breaks from AI */
+    line-height: 1.45;
+    color: #e0e0e0; /* Main dialogue text color */
+    white-space: pre-wrap; /* Preserve line breaks from input/AI */
 }
 
-.dialogue-options { /* Container for multiple choice options if you add them */
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.dialogue-options button {
-    text-align: left;
-}
-
-
-.dialogue-controls-sidebar h3 {
-    font-family: 'Press Start 2P', cursive;
-    color: #ffcc00;
-    font-size: 1.1em;
-    text-align: center;
-    margin-bottom: 15px;
+.npc-dialogue-controls {
+    margin-top: auto; /* Pushes controls to the bottom of the .npc-dialogue-container */
+    padding-top: 15px;
+    border-top: 1px dashed #595377; /* Separator above controls */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive button layout */
+    gap: 8px; /* Space between buttons */
 }
 
+/* Styles for .jrpg-button-small (ensure it's defined, e.g., in main style.css or here) */
 .jrpg-button-small {
-    font-family: 'VT323', monospace; /* Use a more readable font for smaller buttons */
-    background-color: #595377;
-    color: #e0e0e0;
-    border: 1px solid #8a6fab;
-    padding: 8px 12px;
-    font-size: 0.95em;
+    font-family: 'VT323', monospace; /* Readable font for smaller buttons */
+    background-color: #595377; /* Button background */
+    color: #e0e0e0; /* Button text color */
+    border: 1px solid #8a6fab; /* Button border */
+    padding: 8px 10px; /* Padding for buttons */
+    font-size: 0.9em; /* Font size for small buttons */
     cursor: pointer;
     border-radius: 4px;
     text-align: center;
-    display: block; /* Make them full width of sidebar */
-    width: 100%;
-    margin-bottom: 10px;
-    transition: background-color 0.2s;
-    box-sizing: border-box; /* Ensure padding doesn't make it overflow */
+    transition: background-color 0.2s, transform 0.1s;
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 .jrpg-button-small:hover:not(:disabled) {
-    background-color: #6a6292;
+    background-color: #6a6292; /* Hover color */
+    transform: translateY(-1px); /* Slight lift on hover */
 }
 .jrpg-button-small:disabled {
-    background-color: #444;
+    background-color: #444; /* Disabled state */
     color: #777;
     cursor: not-allowed;
+    transform: none;
 }
 
-.jrpg-divider {
-    border: 0;
-    height: 1px;
-    background-color: #595377;
-    margin: 15px 0;
+.scene-input-area {
+    /* .jrpg-box styling is applied from main style.css */
+    margin-top: 20px; /* Space above the scene input area */
+    padding: 20px;
 }
-
-.topic-display {
-    margin-top: 15px;
-    padding: 10px;
-    background-color: #3e3a50;
-    border: 1px dashed #6a4a8a;
-    border-radius: 4px;
+.scene-input-area h2 {
+    font-family: 'Press Start 2P', cursive;
+    color: #ffcc00;
+    font-size: 1.3em;
+    margin-bottom: 15px;
     text-align: center;
-    font-size: 0.9em;
-    color: #c0c0c0;
 }
 
+.jrpg-textarea { /* From main style.css, ensure it's styled appropriately */
+    width: calc(100% - 22px); /* Full width accounting for padding and border */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    min-height: 80px; /* Adjust as needed */
+}
+#start-scene-button { /* Uses .jrpg-button from main style.css */
+    display: block;
+    margin: 20px auto 0 auto; /* Center the button below textarea */
+}
 
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
-    .scene-main-container {
-        grid-template-columns: 1fr; /* Stack main content and sidebar */
+    .npc-interaction-grid {
+        grid-template-columns: 1fr; /* Stack NPC boxes on smaller screens */
     }
-    .dialogue-controls-sidebar {
-        margin-top: 20px; /* Add space when stacked */
+    .scene-main-content {
+        gap: 15px; /* Reduce gap on smaller screens */
     }
 }
