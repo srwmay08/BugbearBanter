@@ -1,3 +1,4 @@
+// ---- server/static/js/app.js ----
 document.addEventListener('DOMContentLoaded', () => {
     const npcSelectionArea = document.getElementById('npc-selection-area');
 
@@ -6,14 +7,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    fetch('/api/npcs') // Your new API endpoint
+    fetch('/api/npcs')
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
             return response.json();
         })
         .then(npcs => {
+            if (!Array.isArray(npcs)) { // Add a check if npcs is an array
+                console.error('Fetched NPC data is not an array:', npcs);
+                npcSelectionArea.innerHTML = '<p>Error: NPC data format is incorrect.</p>';
+                return;
+            }
             if (npcs.length === 0) {
                 npcSelectionArea.innerHTML = '<p>No NPCs found. Go create some!</p>';
                 return;
@@ -30,5 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
         npcs.forEach(npc => {
             const card = document.createElement('div');
             card.className = 'npc-card'; // For styling
+            // --- CORRECTED innerHTML ---
             card.innerHTML = `
-                <h3><span class="math-inline">\{npc\.name\}</h3\>
+                <h3><span class="math-inline">\{npc\.name \|\| 'Unnamed NPC'\}</h3\>

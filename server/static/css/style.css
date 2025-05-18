@@ -1,8 +1,9 @@
-@import url('https_fonts_googleapis_com_css2_family=your-chosen-handwritten-font_family=your-jrpg-pixel-font&display=swap'); /* Replace with actual font imports */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Press+Start+2P&display=swap');
 
 body {
     background-color: #D2B48C; /* Tan */
-    font-family: 'your-chosen-handwritten-font', sans-serif; /* Handdrawn font */
+    font-family: "Caveat", cursive;
     color: #4A3B31; /* Dark brown for text */
     margin: 0;
     padding: 20px;
@@ -12,7 +13,7 @@ body {
 }
 
 header h1 {
-    font-family: 'your-jrpg-pixel-font', fantasy; /* JRPG title font */
+    font-family: "Press Start 2P", system-ui;
     font-size: 2.5em;
     color: #8B4513; /* SaddleBrown or similar */
     text-shadow: 2px 2px #A0522D; /* Sienna for a simple shadow */
@@ -22,10 +23,10 @@ header h1 {
 .jrpg-list-container {
     background-color: #F5DEB3; /* Wheat - lighter tan for content area */
     border: 5px solid transparent; /* Transparent base for image border */
-    border-image: url('/static/images/jrpg_frame.png') 30 round; /* Example: Needs jrpg_frame.png */
+    /* border-image: url('/static/images/jrpg_frame.png') 30 round; */ /* Commented out for now */
     /* Alternatively, use CSS borders for a hand-drawn look */
-    /* border: 3px solid #8B4513; */
-    /* border-radius: 5px; /* Slightly rounded for hand-drawn feel */
+    border: 3px solid #8B4513;
+    border-radius: 5px; /* Slightly rounded for hand-drawn feel */
     padding: 20px;
     width: 80%;
     max-width: 600px;
