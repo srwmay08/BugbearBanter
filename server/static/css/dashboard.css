@@ -47,3 +47,53 @@
     margin-top: 10px;
     font-size: 0.9em;
 }
+
+
+/* WORLD STYLES */
+
+
+.world-info-area {
+    margin-top: 20px;
+}
+
+#world-info-display {
+    margin-top: 15px;
+    text-align: left;
+    padding: 10px;
+    background-color: rgba(0,0,0,0.1); /* Subtle background */
+    border-radius: 4px;
+}
+
+#world-info-display h3 {
+    font-family: 'Press Start 2P', cursive;
+    color: #f0e0a0;
+    font-size: 1.1em;
+    margin-top: 15px;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #4a4166;
+    padding-bottom: 5px;
+}
+#world-info-display h3:first-child {
+    margin-top: 0;
+}
+
+
+.world-info-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.world-info-list li {
+    padding: 8px 5px;
+    border-bottom: 1px solid #3c3852;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.world-info-list li:last-child {
+    border-bottom: none;
+}
+
+.world-info-list strong {
+    color: #e0d090; /* JRPG gold text for titles */
+}

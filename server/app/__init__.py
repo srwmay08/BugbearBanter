@@ -7,6 +7,11 @@ import os
 from flask_login import LoginManager, current_user, login_required # Add login_required here
 from .models import User
 from bson import ObjectId
+from .routes.world_info import world_info_bp # Add import
+from .models import User
+from bson import ObjectId
+
+app.register_blueprint(world_info_bp, url_prefix='/api/world-info') # Add registration
 
 login_manager = LoginManager()
 
@@ -49,6 +54,9 @@ def create_app(config_name='default'):
 
     from .routes.npcs import npcs_bp
     app.register_blueprint(npcs_bp, url_prefix='/api/npcs')
+    
+    app.register_blueprint(world_info_bp, url_prefix='/api/world-info') # <<< ADD THIS LINE
+
 
     # --- Modified Root Route ---
     @app.route('/')

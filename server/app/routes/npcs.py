@@ -1,87 +1,92 @@
 # app/routes/npcs.py
 from flask import Blueprint, jsonify, current_app, request, abort
 from ..utils.db import mongo
-from flask_login import login_required, current_user # For user-specific NPCs
+from flask_login import login_required, current_user
 import json
 import uuid
-from ..models import NPC # For consistency
+# from ..models import NPC # Using direct dicts for DB interaction here
 
 npcs_bp = Blueprint('npcs', __name__)
 NPC_COLLECTION_NAME = 'npcs'
 USERS_COLLECTION_NAME = 'users'
 
 @npcs_bp.route('', methods=['GET'])
-@login_required # Protect this route - only logged-in users can see their NPCs
-def get_user_npcs(): # Renamed to reflect it's user-specific
+@login_required
+def get_combined_npcs(): # Renamed for clarity
     try:
         npc_collection = mongo.db[NPC_COLLECTION_NAME]
-
-        # Fetch NPCs associated with the current logged-in user
-        # Assumes NPC documents have a 'user_id' field matching current_user.get_id()
-        # And current_user.npc_ids stores the _ids of NPCs owned by the user.
-
-        user_npc_ids = current_user.npc_ids or []
-        if not user_npc_ids:
-             return jsonify([]), 200 # No NPCs for this user
-
-        # Convert string IDs to ObjectId if your DB uses ObjectId for NPC _id
-        # If your NPC _ids are strings (like from uuid), this conversion is not needed.
-        # from bson import ObjectId
-        # object_id_list = [ObjectId(id_str) for id_str in user_npc_ids if ObjectId.is_valid(id_str)]
-        # query = {"_id": {"$in": object_id_list}}
-
-        # If NPC _ids are stored as strings in the DB (matching npc_ids in user doc):
-        query = {"_id": {"$in": user_npc_ids}, "user_id": current_user.get_id()}
-
-        npcs_cursor = npc_collection.find(query)
         npcs_list = []
-        for npc in npcs_cursor:
-            if '_id' in npc and not isinstance(npc['_id'], str):
-                npc['_id'] = str(npc['_id'])
-            if 'user_id' in npc and not isinstance(npc['user_id'], str): # Ensure user_id is string for consistency
-                npc['user_id'] = str(npc['user_id'])
-            npcs_list.append(npc)
 
+        # 1. Fetch global/default NPCs (those without a user_id or user_id is null)
+        # Using $or to find documents where user_id is null OR user_id does not exist.
+        global_npcs_cursor = npc_collection.find({"user_id": {"$exists": False}}) # Or {"user_id": None} if you consistently set it to None for global ones
+        
+        processed_ids = set()
+
+        for npc in global_npcs_cursor:
+            npc_id_str = str(npc['_id'])
+            if '_id' in npc and not isinstance(npc['_id'], str):
+                npc['_id'] = npc_id_str
+            
+            # Ensure user_id is not present or explicitly null if that's how you mark globals
+            # For this logic, we assume absence of user_id means global
+            if npc.get('user_id'): # Defensive: if a global somehow got a user_id, ensure it's string
+                 npc['user_id'] = str(npc['user_id'])
+
+            npcs_list.append(npc)
+            processed_ids.add(npc_id_str)
+
+        # 2. Fetch NPCs uploaded by the current user
+        if current_user and hasattr(current_user, 'get_id'): # Check if current_user is valid
+            user_specific_npcs_cursor = npc_collection.find({"user_id": current_user.get_id()})
+            for npc in user_specific_npcs_cursor:
+                npc_id_str = str(npc['_id'])
+                if npc_id_str not in processed_ids: # Avoid duplicates if an NPC could be global and user-owned (unlikely with this logic)
+                    if '_id' in npc and not isinstance(npc['_id'], str):
+                        npc['_id'] = npc_id_str
+                    if 'user_id' in npc and not isinstance(npc['user_id'], str):
+                        npc['user_id'] = str(npc['user_id'])
+                    npcs_list.append(npc)
+                    processed_ids.add(npc_id_str)
+        
+        current_app.logger.info(f"Returning {len(npcs_list)} NPCs for user {current_user.email} (globals + user-specific).")
         return jsonify(npcs_list), 200
     except Exception as e:
-        current_app.logger.error(f"Error fetching user NPCs: {e}")
+        current_app.logger.error(f"Error fetching combined NPCs: {e}", exc_info=True) # Log full traceback
         return jsonify({"error": "Failed to fetch NPCs.", "details": str(e)}), 500
 
+# The /upload route should remain largely the same as it correctly assigns user_id.
 @npcs_bp.route('/upload', methods=['POST'])
 @login_required
 def upload_npc_route():
     if 'npc_file' not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
-
+    
     file = request.files['npc_file']
     if file.filename == '':
         return jsonify({"error": "No file selected for uploading"}), 400
 
     if file and file.filename.endswith('.json'):
         try:
-            npc_data_raw = json.load(file.stream) # file.stream is a file-like object
-
-            # Validate basic structure (assuming single NPC object per file for now)
+            npc_data_raw = json.load(file.stream) 
+            
             if not isinstance(npc_data_raw, dict) or 'name' not in npc_data_raw:
                 return jsonify({"error": "Invalid JSON format or missing NPC name."}), 400
 
             npc_collection = mongo.db[NPC_COLLECTION_NAME]
             users_collection = mongo.db[USERS_COLLECTION_NAME]
 
-            # Prepare NPC document
-            npc_id = str(uuid.uuid4()) # Generate a new unique ID for this NPC
-
-            # Map fields from uploaded JSON to your NPC model structure
-            # Using your Bugbear.json structure as a guide
+            npc_id = str(uuid.uuid4()) 
+            
             npc_doc = {
                 '_id': npc_id,
-                'user_id': current_user.get_id(), # Associate with current user
+                'user_id': current_user.get_id(), 
                 'name': npc_data_raw.get('name'),
                 'race': npc_data_raw.get('race'),
-                'class': npc_data_raw.get('class'), # In DB, store as 'class'
+                'class': npc_data_raw.get('class'), 
                 'alignment': npc_data_raw.get('alignment'),
                 'age': npc_data_raw.get('age'),
-                'personality_traits': npc_data_raw.get('personality_traits'), # Store as string
+                'personality_traits': npc_data_raw.get('personality_traits'), 
                 'ideals': npc_data_raw.get('ideals'),
                 'bonds': npc_data_raw.get('bonds'),
                 'flaws': npc_data_raw.get('flaws'),
@@ -92,31 +97,26 @@ def upload_npc_route():
                 'past_situation': npc_data_raw.get('past_situation'),
                 'current_situation': npc_data_raw.get('current_situation'),
                 'relationships_with_pcs': npc_data_raw.get('relationships_with_pcs'),
-                'appearance': npc_data_raw.get('appearance', 'No description available.'), # Add if present
-                'source_file': file.filename # Store original filename
+                'appearance': npc_data_raw.get('appearance', 'No description available.'), 
+                'source_file': file.filename 
             }
-            # Remove None fields if you prefer cleaner DB entries
             npc_doc_cleaned = {k: v for k, v in npc_doc.items() if v is not None}
 
-
             npc_collection.insert_one(npc_doc_cleaned)
-
-            # Add this NPC's ID to the user's list of NPC IDs
+            
             users_collection.update_one(
                 {"_id": current_user.get_id()},
-                {"$addToSet": {"npc_ids": npc_id}} # $addToSet prevents duplicates
+                {"$addToSet": {"npc_ids": npc_id}} 
             )
-            # Update current_user session object (important for Flask-Login)
-            if npc_id not in current_user.npc_ids:
+            if hasattr(current_user, 'npc_ids') and isinstance(current_user.npc_ids, list) and npc_id not in current_user.npc_ids: # Ensure current_user object is updated if used by Flask-Login session
                 current_user.npc_ids.append(npc_id)
 
-
-            return jsonify({"message": f"NPC '{npc_doc.get('name')}' uploaded successfully with ID {npc_id}", "npc_id": npc_id}), 201
+            return jsonify({"message": f"NPC '{npc_doc.get('name')}' uploaded successfully with ID {npc_id}", "npc_id": npc_id, "npc_data": npc_doc_cleaned}), 201 # Return uploaded NPC data
 
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON file."}), 400
         except Exception as e:
-            current_app.logger.error(f"Error uploading NPC: {e}")
+            current_app.logger.error(f"Error uploading NPC: {e}", exc_info=True)
             return jsonify({"error": "Failed to upload NPC due to server error.", "details": str(e)}), 500
     else:
         return jsonify({"error": "Invalid file type. Only .json files are allowed."}), 400
