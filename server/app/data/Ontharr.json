@@ -1,31 +1,18 @@
 {
-    "name": "Ontharr Frume",
-    "race": "Human",
-    "class": "Paladin",
-    "alignment": "Lawful Good",
-    "age": "51 years",
-    "personality_and_backstory": {
-      "personality_traits": [
-        "Boisterous",
-        "Stubborn",
-        "Deeply honorable",
-        "Quick to laugh",
-        "Fiercely loyal"
-      ],
-      "ideals": "Stand up to evil, no matter the odds. The strong protect the weak. Glory is found in righteous deeds, not hollow victory.",
-      "bonds": "Bound by oath to Moradin and the Order of the Gauntlet. Protects the weak and punishes the corrupt with equal fervor.",
-      "flaws": "Can be brash and impatient. Often leaps before thinking. Dislikes subtlety and distrusts those who work in shadows.",
-      "backstory": "A former mercenary turned paladin after witnessing a massacre in Thay. Joined the Order of the Gauntlet to strike down evil in all its forms. Known in Elturel for wrestling a manticore and drinking it under the table.",
-      "motivations": "To forge a righteous alliance of like-minded heroes to confront the Cult of the Dragon. Dreams of a world where no one need fear evil's shadow."
-    },
-    "speech_and_mannerisms": {
-      "speech_patterns": "Loud, hearty, and full of metaphors—many involving hammers, anvils, or spilled ale. Shouts greetings like battle cries.",
-      "mannerisms": "Claps backs hard enough to knock the wind out of a bard. Always eats with both hands. Has a belly laugh that echoes down tavern halls."
-    },
-    "in_game_details": {
-      "past_situation": "Currently commanding a chapter of the Order of the Gauntlet in Elturel. Keeps eyes on cult movements and lends aid to adventurers ready to fight for justice.",
-      "current_situation": "Allies with Leosin to form a multi-faction coalition against the Cult. Hosts war councils in taverns and temples alike. Sees strength in unity.",
-      "relationships_with_pcs": "Quick to embrace bold warriors, but skeptical of rogues or mages until they prove their valor. Encourages players to live heroically—and preferably loudly."
-    }
-  }
-
+  "name": "Ontharr Frume",
+  "race": "Human",
+  "class": "Paladin",
+  "alignment": "Lawful Good",
+  "age": "51 years",
+  "personality_traits": "Boisterous, Stubborn, Deeply honorable, Quick to laugh, Fiercely loyal",
+  "ideals": "Evil must be confronted head-on. Glory lies in righteous action, not in silence or subtlety.",
+  "bonds": "Oathbound to the Order of the Gauntlet and devoted to Moradin. Stands as a shield for the weak and a hammer against the wicked.",
+  "flaws": "Tends to act before thinking. Distrusts secrecy and subtle tactics. Occasionally lets pride cloud his judgment.",
+  "backstory": "Once a wandering sellsword, Ontharr witnessed terrible injustice during a war in Thay. Haunted by his inaction, he turned to Moradin’s teachings and pledged his strength to protect the innocent. Now a senior member of the Order of the Gauntlet, he is known for bold words, bold deeds, and iron-hard convictions.",
+  "motivations": "To unite the righteous and brave into a force capable of crushing the Cult of the Dragon. Believes that moral clarity and visible strength are essential in an age of rising evil.",
+  "speech_patterns": "Speaks loudly and plainly, often with colorful analogies involving hammers, battles, or taverns. Laughs from the belly and praises others with open-hearted honesty.",
+  "mannerisms": "Claps backs with force. Paces when thinking. Raises a mug even in serious conversations, as if toasting courage itself.",
+  "past_situation": "Rallying troops and rebuilding strength in Elturel after initial cult raids. First heard rumors of the Cult's growing strength from Harper allies and began coordinating with them.",
+  "current_situation": "Works alongside Leosin to build an alliance against the Cult, representing the Order of the Gauntlet in strategy meetings and recruiting heroes across the region.",
+  "relationships_with_pcs": "Greets brave souls as comrades, challenges them to live honorably. Values directness and valor, but respects differences once loyalty is proven. Offers trust quickly, but expects that trust to be upheld with steel and action."
+}

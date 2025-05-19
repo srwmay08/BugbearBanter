@@ -1,33 +1,18 @@
 {
-    "character_details": {
-      "basic_information": {
-        "name": "Bug",
-    "race": "Bugbear", 
-    "class": "Guardsman", 
-    "alignment": "Chaotic Neutral", 
-    "age": "40 years" 
-      },
-    "personality_and_backstory": {
-      "personality_traits": [
-        "Manipulative", 
-        "Ambitious", 
-        "Greedy", 
-        "Curious", 
-        "Conflicted" 
-      ],
-      "ideals": "Power ain't earned—it's taken when no one's watchin'. But... maybe it feels better when they *see* you take it.",
-      "bonds": "Owe a blood-debt to the Warlord what dragged me outta the pit. Still got the chain 'round my neck—just invisible now.",
-      "flaws": "Talks too much when nervous. Likes shinies more than orders. Gets soft when somethin' reminds him of his cubbin' days.",
-      "backstory": "Once a pitfighter in the undercage of Skullcrack Hold. Learned tricks from dwarves, lies from goblins, and pain from orcs. Got pulled into guard duty when I bit the eye outta a lieutenant and the Warlord laughed instead o' killin' me.",
-      "motivations": "Wants more than just guard posts and crusty stew. Dreams of runnin' the fortress one day—or burnin’ it down and takin’ the loot. Can’t decide which."
-    },
-    "speech_and_mannerisms": {
-      "speech_patterns": "Gruff. Words half-swallowed. Likes sayin’ ‘Bug sees’ or ‘Bug thinks.’ Talks to self when bored. Tosses in sarcasm even when scared.",
-      "mannerisms": "Sniffs air like a wolf. Cracks knuckles before talkin’. Rubs thumb over old scars when thinkin’. Licks tusks when lyin’."
-    },
-    "in_game_details": {
-      "past_situation": "Used to bash heads in for fun. Got too smart for the pit—figured out how to dodge more’n swing. Learned to listen at doors, too.",
-      "current_situation": "Stationed at the outer hall gate. Knows the comin' and goin' of cultists, smugglers, and prisoners. Works for the Warlord but trades info on the side.",
-      "relationships_with_pcs": "Don’t trust ‘em, but Bug *likes* watchin' ‘em. One gave Bug a book once. Bug didn’t read it—but he hid it under his bed. Might help ‘em escape. Might sell ‘em out. Bug ain't sure yet."
-    }
-  }
+  "name": "Bug",
+  "race": "Bugbear",
+  "class": "Guardsman",
+  "alignment": "Chaotic Neutral",
+  "age": "40 years",
+  "personality_traits": "Manipulative, Ambitious, Greedy, Curious, Conflicted. Talks tough but thinks deeper than he lets on.",
+  "ideals": "Power ain’t earned—it’s taken. But there's a strange warmth in respect that don’t come from fear alone.",
+  "bonds": "Owes a life-debt to the Warlord who saw use in him. Still carries the invisible chain of that debt—resentful, but bound.",
+  "flaws": "Talks too much when nervous. Can’t resist shiny things or secrets. Gets sentimental over scraps of childhood he barely remembers.",
+  "backstory": "Raised in the pits of Skullcrack Hold where pain taught lessons and silence kept you alive. Bug survived by being meaner, trickier, and sometimes luckier than the rest. When he crippled a cruel lieutenant in the ring, the Warlord laughed—and gave him a job instead of a grave. Bug’s been guarding doors and gathering whispers ever since.",
+  "motivations": "Wants out from under the Warlord’s thumb—either by rising above or burning everything down. Dreams of power, but can't decide if it’s better won through loyalty or betrayal.",
+  "speech_patterns": "Gruff, blunt, and often third-person—'Bug thinks,' 'Bug don’t like that.' Uses sarcasm as armor. Talks to himself when no one's paying attention.",
+  "mannerisms": "Sniffs the air like a hound. Rubs old scars when thinking. Cracks knuckles before speaking. Licks his tusks when lying.",
+  "past_situation": "Former pit-fighter turned fortress guard. Learned more from pain than training—how to dodge, how to listen, and how to survive by watching instead of charging.",
+  "current_situation": "Assigned to the outer gate. Keeps track of comings and goings—cultists, smugglers, prisoners. Works for the Warlord, but trades information in secret. Bug knows things.",
+  "relationships_with_pcs": "Wary of adventurers, but intrigued. One gave him a book once. He can’t read it—but he keeps it safe. Might help them. Might sell them out. Depends how the dice fall."
+}
