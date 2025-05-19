@@ -13,15 +13,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Modal elements for editing NPCs
     const editNpcModal = document.getElementById('edit-npc-modal');
     const editNpcForm = document.getElementById('edit-npc-form');
-    const cancelEditNpcButton = document.getElementById('cancel-edit-npc');
+    const cancelEditNpcButton = document.getElementById('cancel-edit-npc'); // Ensure this ID is unique if world modal also has one
     const npcIdField = document.getElementById('edit-npc-id');
 
     // World Info Modal Elements
     const worldItemModal = document.getElementById('world-item-modal');
     const worldItemForm = document.getElementById('world-item-form');
-    const cancelWorldItemButton = document.getElementById('cancel-world-item'); // Note: Same ID as NPC cancel, might need unique IDs if both modals can be open, or ensure only one is.
-    const worldItemIdField = document.getElementById('edit-world-item-id'); // Note: Same ID
-    const worldItemTypeField = document.getElementById('edit-world-item-type'); 
+    const cancelWorldItemButton = document.getElementById('cancel-world-item-modal-button'); // Unique ID for this cancel
+    const worldItemIdField = document.getElementById('edit-world-item-id-field'); // Unique ID
+    const worldItemTypeField = document.getElementById('edit-world-item-type-field'); // Unique ID
     const worldItemModalTitle = document.getElementById('world-item-modal-title');
     const worldItemFieldsContainer = document.getElementById('world-item-fields-container');
 
@@ -40,8 +40,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentUser = statusResult.user;
             if (welcomeMessage) welcomeMessage.textContent = `Welcome, ${currentUser.name || currentUser.email}!`;
             loadUserNpcs(); // Load NPCs now that currentUser is set
-            // Optionally load world info here too, or keep it button-triggered
-            // fetchAndRenderWorldInfo(); 
         } else {
             window.location.href = '/login';
             return; 
@@ -96,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     npcFileInput.value = ''; 
                     loadUserNpcs(); 
                 } else {
-                    if(uploadMessage) uploadMessage.textContent = result.error || `Upload failed (Status: ${response.status}).`;
+                    if(uploadMessage) uploadMessage.textContent = result.error || `Upload failed (Status: ${response.status}). ${result.details || ''}`;
                     if(uploadMessage) uploadMessage.style.color = 'red';
                 }
             } catch (error) {
@@ -128,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             allAccessibleNpcs.forEach(npc => {
                 let ownerTag = "";
                 let canEditDelete = false;
+                // Check if npc.user_id exists and matches current user's _id (which should be a string from Flask-Login)
                 if (npc.user_id && currentUser && npc.user_id === currentUser._id) {
                     ownerTag = " (Uploaded by you)";
                     canEditDelete = true; 
@@ -136,11 +135,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 
                 html += `<li data-npc-id="${npc._id}">
-                            ${npc.name || 'Unnamed NPC'} ${ownerTag}
+                            <span class="npc-name-display">${npc.name || 'Unnamed NPC'}</span> ${ownerTag}
+                            <span class="npc-actions">
                             ${canEditDelete ? 
                                 `<button class="jrpg-button-small btn-edit-npc" data-id="${npc._id}">Edit</button>
                                  <button class="jrpg-button-small btn-delete-npc" data-id="${npc._id}" data-name="${npc.name || 'this NPC'}">Delete</button>`
                                 : ''}
+                            </span>
                          </li>`;
             });
             html += '</ul>';
@@ -189,14 +190,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const response = await fetch(`/api/npcs/${npcId}`);
+            const response = await fetch(`/api/npcs/${npcId}`); // Fetches single NPC
             if (!response.ok) throw new Error(`Failed to fetch NPC details (status ${response.status})`);
             const npcData = await response.json();
 
-            npcIdField.value = npcData._id;
+            npcIdField.value = npcData._id; // This is the hidden input field
+            // Populate the form based on npcData keys matching form input names
             for (const key in npcData) {
-                if (editNpcForm.elements[key]) {
-                    editNpcForm.elements[key].value = npcData[key] || ''; // Handle null/undefined from DB
+                if (editNpcForm.elements[key]) { // Check if form element with that name exists
+                    editNpcForm.elements[key].value = npcData[key] || ''; 
                 }
             }
             editNpcModal.style.display = 'block';
@@ -209,9 +211,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(editNpcForm){
         editNpcForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const npcId = npcIdField.value;
+            const npcId = npcIdField.value; // Get ID from hidden field
             const formData = new FormData(editNpcForm);
             const dataToUpdate = {};
+            // Define which fields are editable from the form
             const editableFields = [
                 'name', 'race', 'class', 'alignment', 'age', 
                 'personality_traits', 'ideals', 'bonds', 'flaws', 
@@ -246,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if(cancelEditNpcButton){
+    if(cancelEditNpcButton){ // For NPC Edit Modal
         cancelEditNpcButton.addEventListener('click', () => {
             if (editNpcModal) editNpcModal.style.display = 'none';
         });
@@ -275,22 +278,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderWorldInfo(worldData) {
-        // ... (renderWorldInfo function from previous response, ensure it's robust)
         if (!worldData || !worldInfoDisplay) {
             if(worldInfoDisplay) worldInfoDisplay.innerHTML = '<p>No world data received.</p>';
             return;
         }
         let html = '';
 
-        html += '<div><h3>Events <button class="jrpg-button-small btn-create-world-item" data-type="events">Add Event</button></h3>';
+        // --- Events ---
+        html += `<div class="world-info-category"><h3>Events <button class="jrpg-button-small btn-create-world-item" data-type="events">Add Event</button></h3>`;
         if (worldData.events && worldData.events.length > 0) {
             html += '<ul class="world-info-list" id="events-list">';
             worldData.events.forEach(event => {
                 html += `<li data-id="${event._id}">
-                            <strong>${event.name || 'Unnamed Event'}</strong>: ${event.description || 'N/A'} 
-                            (Impact: ${event.impact || 'N/A'}, Status: ${event.status || 'N/A'})
-                            <button class="jrpg-button-small btn-edit-world-item" data-id="${event._id}" data-type="events">Edit</button>
-                            <button class="jrpg-button-small btn-delete-world-item" data-id="${event._id}" data-type="events" data-name="${event.name || 'this event'}">Delete</button>
+                            <div><strong>${event.name || 'Unnamed Event'}</strong></div>
+                            <div><em>Description:</em> ${event.description || 'N/A'}</div>
+                            <div><em>Impact:</em> ${event.impact || 'N/A'}</div>
+                            <div><em>Status:</em> ${event.status || 'N/A'}</div>
+                            <div class="world-item-actions">
+                                <button class="jrpg-button-small btn-edit-world-item" data-id="${event._id}" data-type="events">Edit</button>
+                                <button class="jrpg-button-small btn-delete-world-item" data-id="${event._id}" data-type="events" data-name="${event.name || 'this event'}">Delete</button>
+                            </div>
                          </li>`;
             });
             html += '</ul>';
@@ -299,15 +306,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         html += '</div>';
 
-        html += '<div><h3>Locations <button class="jrpg-button-small btn-create-world-item" data-type="locations">Add Location</button></h3>';
+        // --- Locations ---
+        html += `<div class="world-info-category"><h3>Locations <button class="jrpg-button-small btn-create-world-item" data-type="locations">Add Location</button></h3>`;
         if (worldData.locations && worldData.locations.length > 0) {
             html += '<ul class="world-info-list" id="locations-list">';
             worldData.locations.forEach(loc => {
                 html += `<li data-id="${loc._id}">
-                            <strong>${loc.name || 'Unnamed Location'}</strong> (${loc.type || 'N/A'}): ${loc.description || 'N/A'} 
-                            (Mood: ${loc.current_mood || 'N/A'})
-                            <button class="jrpg-button-small btn-edit-world-item" data-id="${loc._id}" data-type="locations">Edit</button>
-                            <button class="jrpg-button-small btn-delete-world-item" data-id="${loc._id}" data-type="locations" data-name="${loc.name || 'this location'}">Delete</button>
+                            <div><strong>${loc.name || 'Unnamed Location'}</strong> (${loc.type || 'N/A'})</div>
+                            <div><em>Description:</em> ${loc.description || 'N/A'}</div>
+                            <div><em>Mood:</em> ${loc.current_mood || 'N/A'}</div>
+                            <div><em>Key Features:</em> ${Array.isArray(loc.key_features) ? loc.key_features.join(', ') : (loc.key_features || 'N/A')}</div>
+                            <div class="world-item-actions">
+                                <button class="jrpg-button-small btn-edit-world-item" data-id="${loc._id}" data-type="locations">Edit</button>
+                                <button class="jrpg-button-small btn-delete-world-item" data-id="${loc._id}" data-type="locations" data-name="${loc.name || 'this location'}">Delete</button>
+                            </div>
                          </li>`;
             });
             html += '</ul>';
@@ -316,15 +328,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         html += '</div>';
         
-        html += '<div><h3>Religions/Deities <button class="jrpg-button-small btn-create-world-item" data-type="religions">Add Religion</button></h3>';
+        // --- Religions ---
+        html += `<div class="world-info-category"><h3>Religions/Deities <button class="jrpg-button-small btn-create-world-item" data-type="religions">Add Religion</button></h3>`;
         if (worldData.religions && worldData.religions.length > 0) {
             html += '<ul class="world-info-list" id="religions-list">';
             worldData.religions.forEach(rel => {
+                 // Adjust based on your actual religions.json structure
                 html += `<li data-id="${rel._id}">
-                            <strong>${rel.name || 'Unnamed Entity'}</strong> (${rel.type || 'N/A'}): ${rel.description || 'N/A'}. 
-                            Key Features: ${Array.isArray(rel.key_features) ? rel.key_features.join(', ') : (rel.key_features || 'N/A')}
-                            <button class="jrpg-button-small btn-edit-world-item" data-id="${rel._id}" data-type="religions">Edit</button>
-                            <button class="jrpg-button-small btn-delete-world-item" data-id="${rel._id}" data-type="religions" data-name="${rel.name || 'this entity'}">Delete</button>
+                            <div><strong>${rel.name || 'Unnamed Entity'}</strong> (${rel.type || 'N/A'})</div>
+                            <div><em>Description:</em> ${rel.description || 'N/A'}</div>
+                            <div><em>Domains:</em> ${Array.isArray(rel.domains) ? rel.domains.join(', ') : (rel.domains || 'N/A')}</div>
+                            <div><em>Common Saying:</em> ${rel.common_saying || 'N/A'}</div>
+                            <div class="world-item-actions">
+                                <button class="jrpg-button-small btn-edit-world-item" data-id="${rel._id}" data-type="religions">Edit</button>
+                                <button class="jrpg-button-small btn-delete-world-item" data-id="${rel._id}" data-type="religions" data-name="${rel.name || 'this entity'}">Delete</button>
+                            </div>
                          </li>`;
             });
             html += '</ul>';
@@ -335,6 +353,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         worldInfoDisplay.innerHTML = html;
 
+        // Re-attach event listeners for newly created/rendered buttons
         document.querySelectorAll('.btn-delete-world-item').forEach(button => {
             button.addEventListener('click', handleDeleteWorldItem);
         });
@@ -347,7 +366,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function handleDeleteWorldItem(event) {
-        // ... (implementation from previous response)
         const itemId = event.target.dataset.id;
         const itemType = event.target.dataset.type; 
         const itemName = event.target.dataset.name;
@@ -370,9 +388,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function handleOpenCreateWorldItemModal(event) {
-        // ... (implementation from previous response)
         const itemType = event.target.dataset.type;
-        if (!worldItemModal || !worldItemForm || !worldItemFieldsContainer || !worldItemModalTitle || !worldItemIdField || !worldItemTypeField) return;
+        if (!worldItemModal || !worldItemForm || !worldItemFieldsContainer || !worldItemModalTitle || !worldItemIdField || !worldItemTypeField) {
+            console.error("World item modal elements not found!");
+            return;
+        }
         
         worldItemModalTitle.textContent = `Create New ${capitalizeFirstLetter(itemType.slice(0,-1))}`;
         worldItemForm.reset();
@@ -383,12 +403,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     async function handleOpenEditWorldItemModal(event) {
-        // ... (implementation from previous response)
         const itemId = event.target.dataset.id;
         const itemType = event.target.dataset.type;
-         if (!worldItemModal || !worldItemForm || !worldItemFieldsContainer || !worldItemModalTitle || !worldItemIdField || !worldItemTypeField) return;
+        if (!worldItemModal || !worldItemForm || !worldItemFieldsContainer || !worldItemModalTitle || !worldItemIdField || !worldItemTypeField) {
+            console.error("World item modal elements not found!");
+            return;
+        }
 
         try {
+            // Fetch all items of that type to find the specific one
+            // In a larger application, you'd fetch the specific item: /api/world-info/<itemType>/<itemId>
             const response = await fetch(`/api/world-info/${itemType}`); 
             if (!response.ok) throw new Error('Could not fetch item details for editing.');
             const items = await response.json();
@@ -413,10 +437,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function populateWorldItemFormFields(itemType, data = {}) {
-        // ... (implementation from previous response, ensure it's complete for all types)
         if (!worldItemFieldsContainer) return;
-        worldItemFieldsContainer.innerHTML = ''; // Clear previous fields
+        worldItemFieldsContainer.innerHTML = ''; 
         let fieldsHtml = '';
+        // Common fields
         fieldsHtml += `
             <div class="form-group">
                 <label for="world-item-name">Name:</label>
@@ -427,6 +451,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <textarea id="world-item-description" name="description" class="jrpg-textarea" rows="3" required>${data.description || ''}</textarea>
             </div>
         `;
+        // Type-specific fields
         if (itemType === 'events') {
             fieldsHtml += `
                 <div class="form-group">
@@ -471,16 +496,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (worldItemForm) {
         worldItemForm.addEventListener('submit', async (event) => {
-            // ... (implementation from previous response)
             event.preventDefault();
-            const itemId = worldItemIdField.value;
-            const itemType = worldItemTypeField.value;
+            const itemId = worldItemIdField.value; // This should be edit-world-item-id-field.value
+            const itemType = worldItemTypeField.value; // This should be edit-world-item-type-field.value
+            
             const formData = new FormData(worldItemForm);
             const dataToSubmit = {};
             
             for (const [key, value] of formData.entries()) {
                 if (key === '_id' || key === 'item_type_hidden') continue; 
-                if (key === 'key_features' || key === 'domains') { 
+                // Handle comma-separated lists for specific fields
+                if ((itemType === 'locations' && key === 'key_features') || (itemType === 'religions' && key === 'domains')) { 
                     dataToSubmit[key] = value.split(',').map(s => s.trim()).filter(s => s);
                 } else {
                     dataToSubmit[key] = value;
@@ -511,22 +537,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if(cancelWorldItemButton){ // This ID might be duplicated if NPC modal also uses it
-        const npcCancel = document.getElementById('cancel-edit-npc'); // Assuming unique ID for NPC modal cancel
-        if(npcCancel) npcCancel.addEventListener('click', () => { if(editNpcModal) editNpcModal.style.display = 'none';});
-
-        // For world item modal
-        const worldCancel = document.getElementById('cancel-world-item');
-        if(worldCancel) worldCancel.addEventListener('click', () => {
+    if(cancelWorldItemButton){ 
+        cancelWorldItemButton.addEventListener('click', () => { // For World Item Modal
             if (worldItemModal) worldItemModal.style.display = 'none';
         });
     }
     
+    // Close modals if clicked outside
     window.addEventListener('click', function(event) {
-        if (event.target == editNpcModal) { // For NPC modal
+        if (editNpcModal && event.target == editNpcModal) { 
             editNpcModal.style.display = "none";
         }
-        if (event.target == worldItemModal) { // For World Item modal
+        if (worldItemModal && event.target == worldItemModal) { 
             worldItemModal.style.display = "none";
         }
     });
