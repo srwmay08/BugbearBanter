@@ -4,40 +4,60 @@ from flask import current_app
 
 class DialogueService:
     def __init__(self):
+        # Using both print and logger for maximum visibility during debugging
+        print("--- PRINT DEBUG: DialogueService __init__ ENTERED ---")
         current_app.logger.critical("--- CRITICAL DEBUG: DialogueService __init__ ENTERED ---") 
         
         self.gemini_api_key = current_app.config.get('GEMINI_API_KEY') or current_app.config.get('GOOGLE_API_KEY')
+        
+        print(f"--- PRINT DEBUG: DialogueService __init__ - API Key Retrieved: {'SET' if self.gemini_api_key else 'NOT SET'} ---")
         current_app.logger.critical(f"--- CRITICAL DEBUG: DialogueService __init__ - API Key Retrieved: {'SET' if self.gemini_api_key else 'NOT SET'} ---")
 
         if not self.gemini_api_key:
+            print("--- PRINT DEBUG: DialogueService __init__ - Gemini API key IS MISSING. Model will not be initialized. ---")
             current_app.logger.critical("--- CRITICAL DEBUG: DialogueService __init__ - Gemini API key IS MISSING. Model will not be initialized. ---")
             self.model = None
-            return
+            return # Stop initialization if no key
 
         try:
-            # Ensure genai is configured. This should ideally happen once at app startup.
+            print("--- PRINT DEBUG: DialogueService __init__ - Attempting to configure genai and initialize model... ---")
+            current_app.logger.info("--- INFO DEBUG: DialogueService __init__ - Attempting to configure genai and initialize model... ---")
+
+            # Configure genai if not already done.
             # Using a simple flag to try and avoid re-configuration issues.
-            if not hasattr(genai, '_is_configured_globally_by_bugbear'):
+            # This flag is set on the 'genai' module itself.
+            if not hasattr(genai, '_is_configured_globally_by_bugbear_v2'):
+                print("--- PRINT DEBUG: DialogueService __init__ - Calling genai.configure()... ---")
                 current_app.logger.info("--- INFO DEBUG: Attempting to call genai.configure()... ---")
                 genai.configure(api_key=self.gemini_api_key)
-                genai._is_configured_globally_by_bugbear = True # Mark that we've configured it
+                genai._is_configured_globally_by_bugbear_v2 = True 
+                print("--- PRINT DEBUG: DialogueService __init__ - genai.configure() CALLED SUCCESSFULLY. ---")
                 current_app.logger.critical("--- CRITICAL DEBUG: DialogueService __init__ - genai.configure() CALLED SUCCESSFULLY. ---")
             else:
+                print("--- PRINT DEBUG: DialogueService __init__ - genai already configured globally. ---")
                 current_app.logger.info("--- INFO DEBUG: genai already configured globally by Bugbear. ---")
 
             model_name = current_app.config.get('GEMINI_MODEL_NAME', 'gemini-1.5-flash-latest')
+            print(f"--- PRINT DEBUG: DialogueService __init__ - Attempting to initialize GenerativeModel with name: {model_name} ---")
             current_app.logger.info(f"--- INFO DEBUG: Attempting to initialize GenerativeModel with name: {model_name} ---")
+            
             self.model = genai.GenerativeModel(model_name)
+            
+            print(f"--- PRINT DEBUG: DialogueService __init__ - GenerativeModel '{model_name}' INITIALIZED SUCCESSFULLY. ---")
             current_app.logger.critical(f"--- CRITICAL DEBUG: DialogueService __init__ - GenerativeModel '{model_name}' INITIALIZED SUCCESSFULLY. ---")
+
         except Exception as e:
+            print(f"--- PRINT DEBUG: DialogueService __init__ - FAILED to initialize GenerativeModel or configure genai: {e} ---")
             current_app.logger.critical(f"--- CRITICAL DEBUG: DialogueService __init__ - FAILED to initialize GenerativeModel or configure genai: {e} ---")
-            current_app.logger.exception("Full exception during DialogueService init:") # Logs full traceback
+            current_app.logger.exception("Full exception during DialogueService init:") 
             self.model = None
 
     def generate_dialogue_for_npc_in_scene(self, npc_profile, scene_description, conversation_history):
+        print("--- PRINT DEBUG: DialogueService generate_dialogue_for_npc_in_scene CALLED ---")
         current_app.logger.critical("--- CRITICAL DEBUG: DialogueService generate_dialogue_for_npc_in_scene CALLED ---")
 
         if not self.model:
+            print("--- PRINT DEBUG: generate_dialogue_for_npc_in_scene - Gemini model is None. ---")
             current_app.logger.critical("--- CRITICAL DEBUG: generate_dialogue_for_npc_in_scene - Gemini model is None. Cannot generate. ---")
             return "[Error: AI Model Not Initialized. Check server logs for API key/configuration issues.]"
 
@@ -68,8 +88,9 @@ class DialogueService:
 
         full_prompt = "\n".join(prompt_lines)
         
+        print(f"--- PRINT DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---")
         current_app.logger.critical(f"--- CRITICAL DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---")
-        current_app.logger.debug(f"Full prompt for {npc_name}:\n{full_prompt}") # Full prompt for detailed inspection
+        current_app.logger.debug(f"Full prompt for {npc_name}:\n{full_prompt}")
 
         try:
             safety_settings = [
@@ -88,12 +109,12 @@ class DialogueService:
             
             if response.parts:
                 generated_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
-                # Cleanup logic (as before)
+                # Cleanup logic
                 if generated_text.lower().startswith(f"{npc_name.lower()}:"):
                     generated_text = generated_text[len(npc_name)+1:].strip()
                 common_ai_prefixes = ["dialogue:", "response:", f"{npc_name} says:"]
                 for prefix in common_ai_prefixes:
-                    if generated_text.lower().startswith(prefix.lower()):
+                    if generated_text.lower().startswith(prefix.lower()): 
                         generated_text = generated_text[len(prefix):].strip()
                 if len(generated_text) > 1 and ((generated_text.startswith('"') and generated_text.endswith('"')) or \
                    (generated_text.startswith("'") and generated_text.endswith("'"))):
@@ -101,7 +122,7 @@ class DialogueService:
                 
                 current_app.logger.info(f"Successfully generated dialogue for {npc_name}: \"{generated_text}\"")
                 return generated_text if generated_text else f"[{npc_name} ponders silently...]"
-            else: # Handle blocked prompts or empty responses
+            else: 
                 block_reason_msg = "Response contained no usable parts."
                 if hasattr(response, 'prompt_feedback') and response.prompt_feedback and response.prompt_feedback.block_reason:
                     block_reason_msg = response.prompt_feedback.block_reason_message
@@ -111,6 +132,7 @@ class DialogueService:
                 return f"[{npc_name} seems unable to respond. AI Reason: {block_reason_msg}]"
 
         except Exception as e:
+            print(f"--- PRINT DEBUG: Exception during Gemini API call for {npc_name}: {e} ---")
             current_app.logger.critical(f"--- CRITICAL DEBUG: Exception during Gemini API call for {npc_name}: {e} ---")
             current_app.logger.exception("Full exception during AI call:")
             return f"[Error: AI service encountered an issue for {npc_name}. Check server logs.]"
