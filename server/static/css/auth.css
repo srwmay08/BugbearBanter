@@ -1,0 +1,59 @@
+/* server/static/css/auth.css */
+.auth-page-container {
+    max-width: 500px;
+    margin-top: 50px;
+}
+
+.auth-main-content .jrpg-box {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #f0e0a0; /* JRPG gold text */
+}
+
+.jrpg-input { /* Style for your input fields */
+    width: calc(100% - 22px); /* Account for padding and border */
+    padding: 10px;
+    background-color: #2f2c40; /* Darker for input */
+    border: 2px solid #4a4166;
+    color: #e0e0e0;
+    font-family: 'VT323', monospace;
+    font-size: 1.1em;
+    border-radius: 4px;
+}
+
+.jrpg-input:focus {
+    outline: none;
+    border-color: #7b50ba; 
+    box-shadow: 0 0 8px rgba(123, 80, 186, 0.5);
+}
+
+.auth-message {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.auth-toggle {
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+.auth-toggle a {
+    color: #f0e0a0;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.google-signin-container {
+    text-align: center;
+}
+.google-signin-container .g_id_signin {
+    display: inline-block; /* Center the button */
+    margin-top: 10px;
+}
