@@ -1,7 +1,8 @@
 # server/app/services/dialogue_service.py
-import google.generativeai as genai # type: ignore # Ensure NO leading spaces/tabs on this line or the comment above
+import google.generativeai as genai # type: ignore
 from flask import current_app 
-import random # For placeholder topic generation
+from ..utils.db import mongo # Import mongo to access DB directly from service
+import random # For placeholder topic generation, if still used
 
 class DialogueService:
     def __init__(self):
@@ -24,15 +25,16 @@ class DialogueService:
             print("--- PRINT DEBUG: DialogueService __init__ - Attempting to configure genai and initialize model... ---")
             current_app.logger.info("--- INFO DEBUG: DialogueService __init__ - Attempting to configure genai and initialize model... ---")
 
-            if not hasattr(genai, '_is_configured_globally_by_bugbear_v3'): # Use a new flag version
+            # Using a unique flag for this specific project to avoid conflicts if genai is used elsewhere
+            if not hasattr(genai, '_is_configured_globally_by_bugbear_v4'): 
                 print("--- PRINT DEBUG: DialogueService __init__ - Calling genai.configure()... ---")
                 current_app.logger.info("--- INFO DEBUG: Attempting to call genai.configure()... ---")
                 genai.configure(api_key=self.gemini_api_key)
-                genai._is_configured_globally_by_bugbear_v3 = True 
+                genai._is_configured_globally_by_bugbear_v4 = True # Set our unique flag
                 print("--- PRINT DEBUG: DialogueService __init__ - genai.configure() CALLED SUCCESSFULLY. ---")
                 current_app.logger.critical("--- CRITICAL DEBUG: DialogueService __init__ - genai.configure() CALLED SUCCESSFULLY. ---")
             else:
-                print("--- PRINT DEBUG: DialogueService __init__ - genai already configured globally. ---")
+                print("--- PRINT DEBUG: DialogueService __init__ - genai already configured globally by Bugbear. ---")
                 current_app.logger.info("--- INFO DEBUG: genai already configured globally by Bugbear. ---")
 
             model_name = current_app.config.get('GEMINI_MODEL_NAME', 'gemini-1.5-flash-latest')
@@ -50,6 +52,40 @@ class DialogueService:
             current_app.logger.exception("Full exception during DialogueService init:") 
             self.model = None
 
+    def _get_world_knowledge_summary(self):
+        """Helper to fetch a summary of world knowledge from MongoDB."""
+        knowledge_parts = []
+        try:
+            # Fetch a few recent events (e.g., limit to 2-3)
+            # Consider adding a 'date_recorded' or 'priority' field to sort events
+            recent_events = list(mongo.db.world_events.find().limit(3)) 
+            if recent_events:
+                knowledge_parts.append("Some Recent World Events of Note:")
+                for event in recent_events:
+                    knowledge_parts.append(f"- {event.get('name')}: {event.get('description', '')[:120]}... (Impact: {event.get('impact', '')[:80]}...) Status: {event.get('status', 'Unknown')}.")
+            
+            # Fetch a couple of prominent locations
+            # You might want to filter these based on relevance to current scene or NPCs later
+            prominent_locations = list(mongo.db.world_locations.find().limit(2))
+            if prominent_locations:
+                knowledge_parts.append("\nKey Locations in the World:")
+                for loc in prominent_locations:
+                    knowledge_parts.append(f"- {loc.get('name')} ({loc.get('type')}): {loc.get('description', '')[:120]}... Current Mood: {loc.get('current_mood', 'Normal')}.")
+
+            # Fetch a couple of prominent religions
+            prominent_religions = list(mongo.db.world_religions.find().limit(2))
+            if prominent_religions:
+                knowledge_parts.append("\nProminent Deities or Beliefs:")
+                for religion in prominent_religions:
+                    knowledge_parts.append(f"- {religion.get('name')}: Known for {', '.join(religion.get('domains',[]))}. Common saying: \"{religion.get('common_saying','')}\" General Influence: {religion.get('general_influence', '')[:100]}...")
+
+        except Exception as e:
+            current_app.logger.error(f"Error fetching world knowledge from DB: {e}")
+            knowledge_parts.append("Error retrieving some world knowledge details.")
+        
+        return "\n".join(knowledge_parts) if knowledge_parts else "General world knowledge is currently undefined or sparse."
+
+
     def generate_dialogue_for_npc_in_scene(self, npc_profile, scene_description, conversation_history):
         print("--- PRINT DEBUG: DialogueService generate_dialogue_for_npc_in_scene CALLED ---")
         current_app.logger.critical("--- CRITICAL DEBUG: DialogueService generate_dialogue_for_npc_in_scene CALLED ---")
@@ -62,7 +98,8 @@ class DialogueService:
         npc_name = npc_profile.get('name', 'The NPC')
         current_app.logger.info(f"--- INFO DEBUG: Generating dialogue for: {npc_name} ---")
 
-# --- Construct a detailed prompt for the AI ---
+        world_knowledge_summary = self._get_world_knowledge_summary()
+
         prompt_lines = []
         prompt_lines.append(f"You are an AI masterfully roleplaying as {npc_name}, a character in a rich fantasy world. Your goal is to deliver compelling, cinematic dialogue that reveals your character's depth, advances the narrative, and engages the Game Master (GM).")
         prompt_lines.append("The GM will describe a scene or pose a question. Your response MUST be a single, impactful, in-character line or two of spoken dialogue from {npc_name}'s perspective. Do NOT narrate actions, describe thoughts out of character, or break character. Focus purely on what {npc_name} says aloud.")
@@ -79,7 +116,7 @@ class DialogueService:
             prompt_lines.append("Core Personality Traits: Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context).")
 
         if npc_profile.get('backstory'):
-            prompt_lines.append(f"Key Backstory Elements: {npc_profile['backstory'][:400]}...") # Provide a bit more backstory
+            prompt_lines.append(f"Key Backstory Elements: {npc_profile['backstory'][:400]}...") 
         else:
             prompt_lines.append("Key Backstory Elements: Not specified.")
 
@@ -92,55 +129,34 @@ class DialogueService:
             prompt_lines.append(f"Significant Flaws/Weaknesses: {npc_profile['flaws']}. These can create internal conflict or lead to characteristic reactions or mistakes in your speech.")
         else:
             prompt_lines.append("Significant Flaws/Weaknesses: Not specified.")
-
+        
         if npc_profile.get('speech_patterns'):
-            prompt_lines.append(f"Speech Patterns: {npc_profile['speech_patterns']}. These should be considered when creating your response as this is how you speak in the world around you.")
-        else:
-            prompt_lines.append("Speech Patterns: Not specified.")
-        
-        if npc_profile.get('mannerisms'):
-            prompt_lines.append(f"Mannerisms: {npc_profile['mannerisms']}. A distinctive behavioral trait, especially one that calls attention to itself; an idiosyncrasy.")
-        else:
-            prompt_lines.append("Mannerisms: Not specified.")
+             prompt_lines.append(f"Speech Patterns/Voice: {npc_profile.get('speech_patterns')}")
 
-        if npc_profile.get('past_situation'):
-            prompt_lines.append(f"Past history: {npc_profile['past_situation']}. These are events that happened to you in the past.")
-        else:
-            prompt_lines.append("Past: Not specified.")
-            
-        if npc_profile.get('current_situation'):
-            prompt_lines.append(f"Current time: {npc_profile['current_situation']}. This is the current situation your find yourself in.")
-        else:
-            prompt_lines.append("Current: Not specified.")
-
-        if npc_profile.get('relationship_with_pcs'):
-            prompt_lines.append(f"Relationships: {npc_profile['relationships']}. These are details about the relationships you've built with the party.")
-        else:
-            prompt_lines.append("Relationships: Not specified.")
-        
-
+        prompt_lines.append("\n=== General World Knowledge & Recent Events (You are aware of this as background context) ===")
+        prompt_lines.append(world_knowledge_summary if world_knowledge_summary else "The world is a vast place, full of everyday occurrences. Specific details are not immediately relevant unless the scene implies otherwise.")
         
         prompt_lines.append("\n=== Current Scene Context (Provided by GM) ===")
         prompt_lines.append(scene_description)
 
         if conversation_history:
             prompt_lines.append("\n=== Recent Turns in Conversation (Your lines are as {npc_name}) ===")
-            for entry in conversation_history[-3:]: 
+            for entry in conversation_history[-3:]: # Last 3 exchanges for immediate context
                 prompt_lines.append(f"{entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
         
         prompt_lines.append(f"\n=== Your Task: {npc_name}'s Cinematic Dialogue Line ===")
-        prompt_lines.append(f"Based on your detailed profile ({npc_name}) and the current scene, deliver your next spoken line(s). Aim for dialogue that is memorable, reveals character, and feels like it belongs in a compelling story or movie. Avoid generic acknowledgments. Instead, react specifically, ask a pertinent question, make a charged statement, or subtly hint at your thoughts/intentions through your words. How would YOU, {npc_name}, truly respond in this moment to \"{scene_description}\"?")
-        prompt_lines.append("Provide ONLY the dialogue spoken by {npc_name}. A slightly longer, more impactful statement (1-3 sentences) is appropriate for your character and the situation, deliver that.")
-        prompt_lines.append("DIALOGUE RESPONSE:") # Clear marker for AI output
+        prompt_lines.append(f"Based on your detailed profile ({npc_name}), your awareness of the world knowledge, and the current scene, deliver your next spoken line(s). Aim for dialogue that is memorable, reveals character, and feels like it belongs in a compelling story or movie. Your response should integrate your knowledge subtly if relevant. Avoid generic acknowledgments. Instead, react specifically, ask a pertinent question, make a charged statement, or subtly hint at your thoughts/intentions through your words. How would YOU, {npc_name}, truly respond in this moment to \"{scene_description}\"?")
+        prompt_lines.append("Provide ONLY the dialogue spoken by {npc_name}. If the dialogue is short, that's fine, but make it count. If a slightly longer, more impactful statement (1-3 sentences) is appropriate for your character and the situation, deliver that.")
+        prompt_lines.append("DIALOGUE RESPONSE:")
 
         full_prompt = "\n".join(prompt_lines)
         
-        # Ensure the full prompt is logged for debugging if issues persist
+        # Uncomment for very detailed debugging of the entire prompt:
         current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---")
 
 
         try:
-            safety_settings = [ # Using slightly more permissive settings for creative dialogue
+            safety_settings = [ 
                 {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
                 {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
                 {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
@@ -148,10 +164,9 @@ class DialogueService:
             ]
             
             generation_config = genai.types.GenerationConfig(
-                temperature=0.8, # Increased for more creative/varied and less predictable dialogue
-                top_p=0.95,      # Works with temperature to shape the output
-                # top_k=50,      # Can be used, but top_p is often preferred with temperature
-                max_output_tokens=200 # Allow for potentially longer, more "movie style" lines
+                temperature=0.8, 
+                top_p=0.95,      
+                max_output_tokens=200 
             )
 
             response = self.model.generate_content(
@@ -163,7 +178,6 @@ class DialogueService:
             if response.parts:
                 generated_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
                 
-                # Cleanup logic (as before, but ensure it's robust)
                 if generated_text.lower().startswith(f"{npc_name.lower()}:"):
                     generated_text = generated_text[len(npc_name)+1:].strip()
                 
@@ -172,11 +186,12 @@ class DialogueService:
                     if generated_text.lower().startswith(prefix.lower()): 
                         generated_text = generated_text[len(prefix):].strip()
 
-                # Remove surrounding quotes only if they are the very first and very last characters
                 if len(generated_text) > 1 and \
                    ((generated_text.startswith('"') and generated_text.endswith('"')) or \
                     (generated_text.startswith("'") and generated_text.endswith("'"))):
-                    generated_text = generated_text[1:-1]
+                    if (generated_text[0] == '"' and generated_text[-1] == '"') or \
+                       (generated_text[0] == "'" and generated_text[-1] == "'"):
+                        generated_text = generated_text[1:-1]
                 
                 current_app.logger.info(f"Successfully generated dialogue for {npc_name}: \"{generated_text}\"")
                 return generated_text if generated_text else f"[{npc_name} pauses, considering the weight of the moment.]" 
@@ -196,75 +211,107 @@ class DialogueService:
             return f"[Error: AI service encountered an issue for {npc_name}. Check server logs for full exception.]"
 
     def handle_npc_action(self, npc_id, action_type, payload, npc_profile, scene_description, conversation_history):
-        """
-        Handles various NPC-specific actions triggered by dialogue controls.
-        """
         current_app.logger.info(f"--- INFO DEBUG: Handling action '{action_type}' for NPC ID '{npc_id}' ---")
         npc_name = npc_profile.get('name', 'The NPC')
 
         if action_type == "submit_memory":
-            # Placeholder: In a real app, you'd save this to the NPC's memory in the database.
-            # The payload might contain the last few dialogue exchanges.
             dialogue_to_remember = payload.get("dialogue_exchange", "an important event")
             current_app.logger.info(f"NPC Action: '{npc_name}' is 'remembering': {dialogue_to_remember[:100]}...")
-            # For now, just return a confirmation.
-            return {"status": "success", "message": f"'{dialogue_to_remember[:30]}...' noted for {npc_name}."}
+            # TODO: Implement actual database update to NPC's memory field
+            # For example: mongo.db.npcs.update_one({"_id": npc_id}, {"$push": {"memories": dialogue_to_remember}})
+            return {"status": "success", "message": f"'{dialogue_to_remember[:30]}...' noted for {npc_name} (simulated)."}
 
         elif action_type == "undo_memory":
-            # Placeholder: Logic to find and remove the last memory item.
             current_app.logger.info(f"NPC Action: '{npc_name}' is attempting to 'undo last memory'.")
+            # TODO: Implement logic to find and remove the last memory item for this NPC from DB
             return {"status": "success", "message": f"Last memory item for {npc_name} (simulated) undone."}
 
         elif action_type == "next_topic" or action_type == "regenerate_topics":
-            # Placeholder: Call AI to generate new conversation topics.
-            # This would involve a different kind of prompt.
             current_app.logger.info(f"NPC Action: '{npc_name}' - Generating new topics...")
+            world_knowledge_summary = self._get_world_knowledge_summary()
             
-            # Simplified prompt for topic generation
             topic_prompt_lines = [
-                f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile below) is in the following scene.",
+                f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile below) is in the following scene, with some general world context.",
                 f"NPC Profile Summary: Personality: {', '.join(npc_profile.get('personality_traits', ['Unknown']))}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
+                f"World Context: {world_knowledge_summary[:300]}...",
                 f"Current Scene: {scene_description}",
-                "Based on this, suggest 3-5 distinct and engaging conversation topics or questions that this NPC might bring up or be interested in discussing next. Each topic should be a short phrase or question.",
-                "Output each topic on a new line."
+                f"Recent Conversation with {npc_name}:"
             ]
+            for entry in conversation_history[-2:]: # Last 2 exchanges for topic context
+                topic_prompt_lines.append(f"  {entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
+            
+            topic_prompt_lines.append("\nBased on this, suggest 3-5 distinct and engaging conversation topics, questions, or observations that this specific NPC, {npc_name}, might bring up or be interested in discussing next. Each topic should be a short phrase or question suitable for a player to click on to steer the conversation. Consider {npc_name}'s personality and the current situation.")
+            topic_prompt_lines.append("Output each topic on a new line, starting with '- '.")
             topic_prompt = "\n".join(topic_prompt_lines)
             
+            current_app.logger.debug(f"--- TOPIC PROMPT for {npc_name} ---\n{topic_prompt}\n--- END TOPIC PROMPT ---")
+
             try:
-                if not self.model:
-                    return {"status": "error", "message": "AI model not initialized for topic generation."}
-                
-                response = self.model.generate_content(topic_prompt) # Use default generation config
+                if not self.model: return {"status": "error", "message": "AI model not initialized."}
+                # Use slightly different generation config for topics - perhaps more focused
+                topic_gen_config = genai.types.GenerationConfig(temperature=0.7, max_output_tokens=150)
+                safety_settings_topics = [ # Can be same or different
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                ]
+
+                response = self.model.generate_content(topic_prompt, generation_config=topic_gen_config, safety_settings=safety_settings_topics)
                 
                 if response.parts:
                     topics_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
-                    suggested_topics = [topic.strip() for topic in topics_text.split('\n') if topic.strip()]
+                    suggested_topics = [topic.strip().lstrip('- ') for topic in topics_text.split('\n') if topic.strip()]
                     current_app.logger.info(f"Generated topics for {npc_name}: {suggested_topics}")
                     return {"status": "success", "action": action_type, "data": {"new_topics": suggested_topics, "message": f"New topics generated for {npc_name}."}}
                 else:
-                    current_app.logger.warning(f"Topic generation for {npc_name} produced no usable parts.")
-                    return {"status": "error", "message": "Could not generate topics."}
+                    block_reason_msg = "Topic gen response had no parts."
+                    if hasattr(response, 'prompt_feedback') and response.prompt_feedback and response.prompt_feedback.block_reason:
+                         block_reason_msg = response.prompt_feedback.block_reason_message
+                    current_app.logger.warning(f"Topic generation for {npc_name} failed: {block_reason_msg}")
+                    return {"status": "error", "message": f"Could not generate topics: {block_reason_msg}"}
             except Exception as e:
                 current_app.logger.error(f"Error generating topics for {npc_name}: {e}")
                 return {"status": "error", "message": "Error during topic generation."}
 
         elif action_type == "show_top5_options":
-            # Placeholder: Call AI to generate 5 potential next dialogue lines for THIS NPC.
             current_app.logger.info(f"NPC Action: '{npc_name}' - Generating top 5 dialogue options...")
-            # This would be similar to generate_dialogue_for_npc_in_scene but ask for multiple options.
-            # For now, returning placeholder options.
-            options = [
-                f"{npc_name} considers saying: 'Perhaps we should discuss the old ruins?'",
-                f"{npc_name} might ask: 'What do you make of the recent omens?'",
-                f"{npc_name} could state: 'I have a proposal for you.'",
-                f"A more direct line from {npc_name}: 'Tell me your true intentions.'",
-                f"{npc_name} offers: 'Maybe a drink would loosen our tongues?'"
+            # This would be similar to generate_dialogue_for_npc_in_scene but ask for multiple distinct options.
+            # Prompt needs to be carefully crafted to ask for variations or different angles.
+            options_prompt_lines = [
+                f"You are roleplaying as {npc_name}. Profile and scene context are below.",
+                # (Include relevant parts of NPC profile, scene, history as in main dialogue generation)
+                f"NPC Profile Summary: Personality: {', '.join(npc_profile.get('personality_traits', ['Unknown']))}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
+                f"Current Scene: {scene_description}",
+                f"Recent Conversation with {npc_name}:"
             ]
-            random.shuffle(options) # Make them seem a bit random
-            return {"status": "success", "action": action_type, "data": {"dialogue_options": options[:3], "message": f"Top dialogue options for {npc_name}."}} # Return 3 for now
+            for entry in conversation_history[-2:]:
+                options_prompt_lines.append(f"  {entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
+            options_prompt_lines.append(f"\nConsidering this, generate 3 to 5 distinct, in-character dialogue lines that {npc_name} could say next. Each line should offer a different approach or reaction to the current situation. Number each option.")
+            options_prompt_lines.append("Output ONLY the numbered dialogue lines.")
+            options_prompt = "\n".join(options_prompt_lines)
 
-        # "show_tree" is more complex and would likely be handled mostly on the frontend with stored history,
-        # or require a backend to structure and return the conversation graph.
+            current_app.logger.debug(f"--- OPTIONS PROMPT for {npc_name} ---\n{options_prompt}\n--- END OPTIONS PROMPT ---")
+            
+            try:
+                if not self.model: return {"status": "error", "message": "AI model not initialized."}
+                options_gen_config = genai.types.GenerationConfig(temperature=0.8, max_output_tokens=300) # More tokens for multiple options
+                response = self.model.generate_content(options_prompt, generation_config=options_gen_config, safety_settings=self.get_default_safety_settings()) # Use helper for safety settings
+
+                if response.parts:
+                    options_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
+                    # Basic parsing for numbered list (can be improved)
+                    dialogue_options = [opt.strip().lstrip('0123456789. ') for opt in options_text.split('\n') if opt.strip()]
+                    current_app.logger.info(f"Generated dialogue options for {npc_name}: {dialogue_options}")
+                    return {"status": "success", "action": action_type, "data": {"dialogue_options": dialogue_options[:5], "message": f"Top dialogue options for {npc_name}."}}
+                else: # Handle blocked or empty
+                    block_reason_msg = "Options gen response had no parts."
+                    if hasattr(response, 'prompt_feedback') and response.prompt_feedback and response.prompt_feedback.block_reason:
+                         block_reason_msg = response.prompt_feedback.block_reason_message
+                    current_app.logger.warning(f"Options generation for {npc_name} failed: {block_reason_msg}")
+                    return {"status": "error", "message": f"Could not generate options: {block_reason_msg}"}
+            except Exception as e:
+                current_app.logger.error(f"Error generating dialogue options for {npc_name}: {e}")
+                return {"status": "error", "message": "Error generating dialogue options."}
+
         elif action_type == "show_tree":
             current_app.logger.info(f"NPC Action: '{npc_name}' - Show Conversation Tree (not implemented).")
             return {"status": "info", "message": "Conversation Tree feature is not yet implemented."}
@@ -272,4 +319,13 @@ class DialogueService:
         else:
             current_app.logger.warning(f"NPC Action: Unknown action type '{action_type}' for NPC ID '{npc_id}'.")
             return {"status": "error", "message": f"Unknown action: {action_type}"}
+
+    def get_default_safety_settings(self):
+        """Returns default safety settings for AI generation."""
+        return [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+        ]
 

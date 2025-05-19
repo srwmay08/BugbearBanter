@@ -1,0 +1,24 @@
+    [
+        {
+            "_id": "cult_dragon_rise",
+            "name": "The Rise of the Cult of the Dragon",
+            "description": "The Cult of the Dragon has become increasingly active across the Sword Coast, amassing treasure and seeking to bring Tiamat, the Queen of Evil Dragons, into the world. Their activities are causing widespread fear and disruption.",
+            "impact": "Increased monster activity, raids on settlements, political instability, formation of alliances to counter the threat.",
+            "status": "Ongoing and escalating."
+        },
+        {
+            "_id": "daggerford_murders",
+            "name": "Recent Murders in Daggerford",
+            "description": "A prominent Cult of the Dragon member, Nicky Diamond, and his associates were recently killed in Daggerford, leading to heightened tensions and investigations within the town. Smuggling activities are also under scrutiny.",
+            "impact": "Increased guard patrols in Daggerford, suspicion towards outsiders, disruption of illicit trade.",
+            "status": "Very recent."
+        },
+        {
+            "_id": "trade_disruptions_sword_coast",
+            "name": "Trade Disruptions along the Trade Way",
+            "description": "Increased banditry and monster attacks, possibly orchestrated or exacerbated by the Cult of the Dragon, are making travel and trade along the major routes more perilous.",
+            "impact": "Higher prices for goods, fewer merchant caravans, increased demand for escorts.",
+            "status": "Ongoing."
+        }
+    ]
+    
