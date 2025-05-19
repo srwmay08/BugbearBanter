@@ -27,6 +27,10 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'a_very_secret_default_key_for_dev')
     MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/ttrpg_app_db')
     
+    # Google Client ID
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+
+
     # API Keys - these MUST be uppercase to be loaded by from_object() into app.config
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') # If you use this as an alternative name

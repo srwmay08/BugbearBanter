@@ -4,7 +4,7 @@ from flask_cors import CORS
 from .config import config_by_name
 from .utils.db import init_db, mongo
 import os
-from flask_login import LoginManager, current_user # Added current_user
+from flask_login import LoginManager, current_user, login_required # Add login_required here
 from .models import User
 from bson import ObjectId
 
@@ -73,7 +73,7 @@ def create_app(config_name='default'):
     
     # Renamed to avoid conflict with the general concept of "index"
     @app.route('/npc-selector', endpoint='npc_selector_page_route') # Added endpoint name
-    @login_manager.login_required # Protect this page
+    @login_required # Protect this page
     def npc_selector_page():
         absolute_static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), app.static_folder))
         # This serves index.html which is your NPC selector
@@ -84,7 +84,7 @@ def create_app(config_name='default'):
 
 
     @app.route('/scene', endpoint='scene_page_route') # Added endpoint name
-    @login_manager.login_required # Protect this page
+    @login_required # Protect this page
     def scene_page():
         absolute_static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), app.static_folder))
         target_path = os.path.join(absolute_static_folder, 'scene.html')
@@ -93,7 +93,7 @@ def create_app(config_name='default'):
         return send_from_directory(app.static_folder, 'scene.html')
     
     @app.route('/dashboard', endpoint='dashboard_page_route') # Added endpoint name
-    @login_manager.login_required # Protect this page
+    @login_required # Protect this page
     def dashboard_page():
          absolute_static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), app.static_folder))
          target_path = os.path.join(absolute_static_folder, 'dashboard.html')
