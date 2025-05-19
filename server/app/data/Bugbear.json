@@ -1,9 +1,12 @@
 {
-    "name": "Bug",
+    "character_details": {
+      "basic_information": {
+        "name": "Bug",
     "race": "Bugbear", 
     "class": "Guardsman", 
     "alignment": "Chaotic Neutral", 
-    "age": "40 years", 
+    "age": "40 years" 
+      },
     "personality_and_backstory": {
       "personality_traits": [
         "Manipulative", 

@@ -62,65 +62,96 @@ class DialogueService:
         npc_name = npc_profile.get('name', 'The NPC')
         current_app.logger.info(f"--- INFO DEBUG: Generating dialogue for: {npc_name} ---")
 
-        # --- Construct a detailed prompt for the AI ---
+# --- Construct a detailed prompt for the AI ---
         prompt_lines = []
-        prompt_lines.append(f"You are an AI roleplaying as {npc_name}, an NPC in a fantasy tabletop game. Your persona is defined by the details below. The Game Master (GM) will describe a situation. Your response MUST be a single, in-character line of dialogue that {npc_name} would say aloud. It should directly reflect your character's personality, motivations, and current understanding of the scene. Do NOT describe actions, thoughts, or break character. Only provide the spoken words.")
+        prompt_lines.append(f"You are an AI masterfully roleplaying as {npc_name}, a character in a rich fantasy world. Your goal is to deliver compelling, cinematic dialogue that reveals your character's depth, advances the narrative, and engages the Game Master (GM).")
+        prompt_lines.append("The GM will describe a scene or pose a question. Your response MUST be a single, impactful, in-character line or two of spoken dialogue from {npc_name}'s perspective. Do NOT narrate actions, describe thoughts out of character, or break character. Focus purely on what {npc_name} says aloud.")
         
-        prompt_lines.append(f"\n=== {npc_name}'s Character Profile ===")
+        prompt_lines.append(f"\n=== {npc_name}'s In-Depth Character Profile ===")
         prompt_lines.append(f"Name: {npc_name}")
         prompt_lines.append(f"Race: {npc_profile.get('race', 'Unknown')}")
         prompt_lines.append(f"Class/Role: {npc_profile.get('class', 'Unknown')}") 
         prompt_lines.append(f"Appearance: {npc_profile.get('appearance', 'Not clearly described.')}")
         
         if npc_profile.get('personality_traits'):
-            prompt_lines.append(f"Key Personality Traits: {', '.join(npc_profile['personality_traits'])}. These are core to how you behave and speak. Embody them.")
+            prompt_lines.append(f"Core Personality Traits: {', '.join(npc_profile['personality_traits'])}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
         else:
-            prompt_lines.append("Key Personality Traits: Not specified. (Respond based on general context or a neutral but observant stance).")
+            prompt_lines.append("Core Personality Traits: Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context).")
 
         if npc_profile.get('backstory'):
-            prompt_lines.append(f"Relevant Backstory: {npc_profile['backstory'][:350]}...") 
+            prompt_lines.append(f"Key Backstory Elements: {npc_profile['backstory'][:400]}...") # Provide a bit more backstory
         else:
-            prompt_lines.append("Relevant Backstory: Not specified.")
+            prompt_lines.append("Key Backstory Elements: Not specified.")
 
         if npc_profile.get('motivations'):
-            prompt_lines.append(f"Primary Motivations: {npc_profile['motivations']}. These should strongly influence your words and goals.")
+            prompt_lines.append(f"Driving Motivations: {npc_profile['motivations']}. Your dialogue should reflect these underlying goals and desires, even if subtly.")
         else:
-            prompt_lines.append("Primary Motivations: Not specified.")
+            prompt_lines.append("Driving Motivations: Not specified.")
 
         if npc_profile.get('flaws'):
-            prompt_lines.append(f"Flaws/Weaknesses: {npc_profile['flaws']}. These might cause you to react in particular, sometimes suboptimal, ways.")
+            prompt_lines.append(f"Significant Flaws/Weaknesses: {npc_profile['flaws']}. These can create internal conflict or lead to characteristic reactions or mistakes in your speech.")
         else:
-            prompt_lines.append("Flaws/Weaknesses: Not specified.")
+            prompt_lines.append("Significant Flaws/Weaknesses: Not specified.")
+
+        if npc_profile.get('speech_patterns'):
+            prompt_lines.append(f"Speech Patterns: {npc_profile['speech_patterns']}. These should be considered when creating your response as this is how you speak in the world around you.")
+        else:
+            prompt_lines.append("Speech Patterns: Not specified.")
         
-        prompt_lines.append("\n=== Current Scene (Described by GM) ===")
+        if npc_profile.get('mannerisms'):
+            prompt_lines.append(f"Mannerisms: {npc_profile['mannerisms']}. A distinctive behavioral trait, especially one that calls attention to itself; an idiosyncrasy.")
+        else:
+            prompt_lines.append("Mannerisms: Not specified.")
+
+        if npc_profile.get('past_situation'):
+            prompt_lines.append(f"Past history: {npc_profile['past_situation']}. These are events that happened to you in the past.")
+        else:
+            prompt_lines.append("Past: Not specified.")
+            
+        if npc_profile.get('current_situation'):
+            prompt_lines.append(f"Current time: {npc_profile['current_situation']}. This is the current situation your find yourself in.")
+        else:
+            prompt_lines.append("Current: Not specified.")
+
+        if npc_profile.get('relationship_with_pcs'):
+            prompt_lines.append(f"Relationships: {npc_profile['relationships']}. These are details about the relationships you've built with the party.")
+        else:
+            prompt_lines.append("Relationships: Not specified.")
+        
+
+        
+        prompt_lines.append("\n=== Current Scene Context (Provided by GM) ===")
         prompt_lines.append(scene_description)
 
         if conversation_history:
-            prompt_lines.append("\n=== Recent Conversation (Your lines are from your perspective as {npc_name}) ===")
+            prompt_lines.append("\n=== Recent Turns in Conversation (Your lines are as {npc_name}) ===")
             for entry in conversation_history[-3:]: 
                 prompt_lines.append(f"{entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
         
-        prompt_lines.append(f"\n=== Your Task: {npc_name}'s Next Spoken Line ===")
-        prompt_lines.append(f"Given your profile and the current scene, what is the one thing you, {npc_name}, say next? Your response must be only the direct quote. Do not just acknowledge the scene; react to it, ask a question, or make a statement driven by your personality, motivations, or flaws. For instance, if the GM says, \"{scene_description}\", how would YOU, {npc_name}, specifically respond with a line of dialogue? Be concise and impactful. Your response should be unique and characteristic of {npc_name}.")
-        prompt_lines.append("RESPONSE:")
+        prompt_lines.append(f"\n=== Your Task: {npc_name}'s Cinematic Dialogue Line ===")
+        prompt_lines.append(f"Based on your detailed profile ({npc_name}) and the current scene, deliver your next spoken line(s). Aim for dialogue that is memorable, reveals character, and feels like it belongs in a compelling story or movie. Avoid generic acknowledgments. Instead, react specifically, ask a pertinent question, make a charged statement, or subtly hint at your thoughts/intentions through your words. How would YOU, {npc_name}, truly respond in this moment to \"{scene_description}\"?")
+        prompt_lines.append("Provide ONLY the dialogue spoken by {npc_name}. If the dialogue is short, that's fine, but make it count. If a slightly longer, more impactful statement (1-3 sentences) is appropriate for your character and the situation, deliver that.")
+        prompt_lines.append("DIALOGUE RESPONSE:") # Clear marker for AI output
 
         full_prompt = "\n".join(prompt_lines)
         
-        print(f"--- PRINT DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---")
-        current_app.logger.critical(f"--- CRITICAL DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---")
-        current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---") # Ensure this is uncommented for full prompt inspection
+        # Ensure the full prompt is logged for debugging if issues persist
+        current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---")
+
 
         try:
-            safety_settings = [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+            safety_settings = [ # Using slightly more permissive settings for creative dialogue
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
             ]
             
             generation_config = genai.types.GenerationConfig(
-                temperature=0.75, 
-                max_output_tokens=120 
+                temperature=0.8, # Increased for more creative/varied and less predictable dialogue
+                top_p=0.95,      # Works with temperature to shape the output
+                # top_k=50,      # Can be used, but top_p is often preferred with temperature
+                max_output_tokens=200 # Allow for potentially longer, more "movie style" lines
             )
 
             response = self.model.generate_content(
@@ -132,22 +163,23 @@ class DialogueService:
             if response.parts:
                 generated_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
                 
+                # Cleanup logic (as before, but ensure it's robust)
                 if generated_text.lower().startswith(f"{npc_name.lower()}:"):
                     generated_text = generated_text[len(npc_name)+1:].strip()
                 
-                common_ai_prefixes = ["dialogue:", "response:", f"{npc_name} says:"]
+                common_ai_prefixes = ["dialogue:", "response:", f"{npc_name} says:", "spokendialogue:"]
                 for prefix in common_ai_prefixes:
                     if generated_text.lower().startswith(prefix.lower()): 
                         generated_text = generated_text[len(prefix):].strip()
 
-                if len(generated_text) > 1 and ((generated_text.startswith('"') and generated_text.endswith('"')) or \
-                   (generated_text.startswith("'") and generated_text.endswith("'"))):
-                    if (generated_text[0] == '"' and generated_text[-1] == '"') or \
-                       (generated_text[0] == "'" and generated_text[-1] == "'"):
-                        generated_text = generated_text[1:-1]
+                # Remove surrounding quotes only if they are the very first and very last characters
+                if len(generated_text) > 1 and \
+                   ((generated_text.startswith('"') and generated_text.endswith('"')) or \
+                    (generated_text.startswith("'") and generated_text.endswith("'"))):
+                    generated_text = generated_text[1:-1]
                 
                 current_app.logger.info(f"Successfully generated dialogue for {npc_name}: \"{generated_text}\"")
-                return generated_text if generated_text else f"[{npc_name} considers the situation.]" 
+                return generated_text if generated_text else f"[{npc_name} pauses, considering the weight of the moment.]" 
             else: 
                 block_reason_msg = "Response contained no usable parts (e.g., empty or only safety attributes)."
                 if hasattr(response, 'prompt_feedback') and response.prompt_feedback and response.prompt_feedback.block_reason:
