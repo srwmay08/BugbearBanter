@@ -116,7 +116,7 @@ class DialogueService:
                 safety_settings=safety_settings
             )
             
-            # current_app.logger.debug(f"Gemini Raw Response for {npc_name}: {response}")
+            current_app.logger.debug(f"Gemini Raw Response for {npc_name}: {response}")
 
             if response.parts:
                 generated_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
