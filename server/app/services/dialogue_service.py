@@ -1,6 +1,7 @@
 # server/app/services/dialogue_service.py
 import google.generativeai as genai # type: ignore # Ensure NO leading spaces/tabs on this line or the comment above
 from flask import current_app 
+import random # For placeholder topic generation
 
 class DialogueService:
     def __init__(self):
@@ -107,8 +108,7 @@ class DialogueService:
         
         print(f"--- PRINT DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---")
         current_app.logger.critical(f"--- CRITICAL DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---")
-        # Uncomment for very detailed debugging of the entire prompt:
-        # current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---")
+        current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---") # Ensure this is uncommented for full prompt inspection
 
         try:
             safety_settings = [
@@ -162,3 +162,82 @@ class DialogueService:
             current_app.logger.critical(f"--- CRITICAL DEBUG: Exception during Gemini API call for {npc_name}: {e} ---")
             current_app.logger.exception("Full exception details during AI call:")
             return f"[Error: AI service encountered an issue for {npc_name}. Check server logs for full exception.]"
+
+    def handle_npc_action(self, npc_id, action_type, payload, npc_profile, scene_description, conversation_history):
+        """
+        Handles various NPC-specific actions triggered by dialogue controls.
+        """
+        current_app.logger.info(f"--- INFO DEBUG: Handling action '{action_type}' for NPC ID '{npc_id}' ---")
+        npc_name = npc_profile.get('name', 'The NPC')
+
+        if action_type == "submit_memory":
+            # Placeholder: In a real app, you'd save this to the NPC's memory in the database.
+            # The payload might contain the last few dialogue exchanges.
+            dialogue_to_remember = payload.get("dialogue_exchange", "an important event")
+            current_app.logger.info(f"NPC Action: '{npc_name}' is 'remembering': {dialogue_to_remember[:100]}...")
+            # For now, just return a confirmation.
+            return {"status": "success", "message": f"'{dialogue_to_remember[:30]}...' noted for {npc_name}."}
+
+        elif action_type == "undo_memory":
+            # Placeholder: Logic to find and remove the last memory item.
+            current_app.logger.info(f"NPC Action: '{npc_name}' is attempting to 'undo last memory'.")
+            return {"status": "success", "message": f"Last memory item for {npc_name} (simulated) undone."}
+
+        elif action_type == "next_topic" or action_type == "regenerate_topics":
+            # Placeholder: Call AI to generate new conversation topics.
+            # This would involve a different kind of prompt.
+            current_app.logger.info(f"NPC Action: '{npc_name}' - Generating new topics...")
+            
+            # Simplified prompt for topic generation
+            topic_prompt_lines = [
+                f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile below) is in the following scene.",
+                f"NPC Profile Summary: Personality: {', '.join(npc_profile.get('personality_traits', ['Unknown']))}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
+                f"Current Scene: {scene_description}",
+                "Based on this, suggest 3-5 distinct and engaging conversation topics or questions that this NPC might bring up or be interested in discussing next. Each topic should be a short phrase or question.",
+                "Output each topic on a new line."
+            ]
+            topic_prompt = "\n".join(topic_prompt_lines)
+            
+            try:
+                if not self.model:
+                    return {"status": "error", "message": "AI model not initialized for topic generation."}
+                
+                response = self.model.generate_content(topic_prompt) # Use default generation config
+                
+                if response.parts:
+                    topics_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
+                    suggested_topics = [topic.strip() for topic in topics_text.split('\n') if topic.strip()]
+                    current_app.logger.info(f"Generated topics for {npc_name}: {suggested_topics}")
+                    return {"status": "success", "action": action_type, "data": {"new_topics": suggested_topics, "message": f"New topics generated for {npc_name}."}}
+                else:
+                    current_app.logger.warning(f"Topic generation for {npc_name} produced no usable parts.")
+                    return {"status": "error", "message": "Could not generate topics."}
+            except Exception as e:
+                current_app.logger.error(f"Error generating topics for {npc_name}: {e}")
+                return {"status": "error", "message": "Error during topic generation."}
+
+        elif action_type == "show_top5_options":
+            # Placeholder: Call AI to generate 5 potential next dialogue lines for THIS NPC.
+            current_app.logger.info(f"NPC Action: '{npc_name}' - Generating top 5 dialogue options...")
+            # This would be similar to generate_dialogue_for_npc_in_scene but ask for multiple options.
+            # For now, returning placeholder options.
+            options = [
+                f"{npc_name} considers saying: 'Perhaps we should discuss the old ruins?'",
+                f"{npc_name} might ask: 'What do you make of the recent omens?'",
+                f"{npc_name} could state: 'I have a proposal for you.'",
+                f"A more direct line from {npc_name}: 'Tell me your true intentions.'",
+                f"{npc_name} offers: 'Maybe a drink would loosen our tongues?'"
+            ]
+            random.shuffle(options) # Make them seem a bit random
+            return {"status": "success", "action": action_type, "data": {"dialogue_options": options[:3], "message": f"Top dialogue options for {npc_name}."}} # Return 3 for now
+
+        # "show_tree" is more complex and would likely be handled mostly on the frontend with stored history,
+        # or require a backend to structure and return the conversation graph.
+        elif action_type == "show_tree":
+            current_app.logger.info(f"NPC Action: '{npc_name}' - Show Conversation Tree (not implemented).")
+            return {"status": "info", "message": "Conversation Tree feature is not yet implemented."}
+            
+        else:
+            current_app.logger.warning(f"NPC Action: Unknown action type '{action_type}' for NPC ID '{npc_id}'.")
+            return {"status": "error", "message": f"Unknown action: {action_type}"}
+

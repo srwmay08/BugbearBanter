@@ -1,224 +1,286 @@
 /* static/css/scene.css */
 
-/* Inherits base JRPG styles from style.css (e.g., .page-container, .jrpg-header, .jrpg-button, .jrpg-footer) */
-
+/* General Scene Layout */
 .scene-page-container {
-    /* Specific overrides for scene page if needed, e.g., different max-width */
-    max-width: 1400px; /* Allow wider layout for multiple NPC columns */
+    max-width: 1600px; 
+    margin: 10px auto; /* Reduced top/bottom margin */
+    padding: 15px; /* Reduced padding */
 }
 
 .scene-main-content {
     display: flex;
-    flex-direction: column; /* Stack NPC interaction area and then scene input area */
-    gap: 25px; /* Space between the main sections */
+    flex-direction: column;
+    gap: 20px; /* Reduced gap */
 }
 
 #current-scene-description-display {
-    font-size: 1em; /* Or 1.1em if you prefer */
-    color: #c0c0c0; /* Light grey for readability */
-    margin-top: 5px;
+    font-size: 1em; /* Slightly smaller */
+    color: #c0c0c0; 
+    margin-top: 0px; /* Reduced margin */
+    margin-bottom: 15px; /* Reduced margin */
     font-style: italic;
-    min-height: 1.2em; /* Prevent layout shift when text is populated */
-    text-align: center; /* Center the scene description display */
-    padding: 5px;
-    background-color: rgba(0,0,0,0.1); /* Subtle background */
+    min-height: 1.2em; 
+    text-align: center; 
+    padding: 8px; /* Reduced padding */
+    background-color: rgba(30, 30, 40, 0.5); 
+    border: 1px solid #4a4166;
     border-radius: 4px;
 }
 
 .loading-npcs-message {
     text-align: center;
-    font-size: 1.2em;
-    padding: 30px;
-    color: #a0a0a0; /* Muted color for loading text */
+    font-size: 1.1em; /* Slightly smaller */
+    padding: 20px; /* Reduced padding */
+    color: #a0a0a0;
 }
 
+/* Grid for NPC Interaction Areas */
 .npc-interaction-grid {
     display: grid;
-    /* Create as many columns as fit, each at least 320px wide, max 1fr */
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 20px; /* Space between individual NPC containers */
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); /* Slightly smaller min-width */
+    gap: 15px; /* Reduced gap */
     width: 100%;
 }
 
+/* Individual NPC Dialogue Container - The main "Chat Box" frame */
 .npc-dialogue-container {
-    background-color: #4a4660; /* Darker box background, consistent with .jrpg-box */
-    border: 2px solid #6a4a8a; /* JRPG purple accent */
-    padding: 15px;
-    border-radius: 6px;
-    box-shadow: inset 0 0 8px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.2); /* Inner and outer shadow */
+    background-color: #2c3e50; 
+    border: 2px solid #7c90a0; /* Slightly thinner border */
+    border-top-color: #a8c0d8; 
+    border-left-color: #a8c0d8; 
+    border-bottom-color: #4c6070; 
+    border-right-color: #4c6070; 
+    padding: 0; 
+    border-radius: 4px; /* Slightly smaller radius */
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.3); /* Reduced shadow */
     display: flex;
-    flex-direction: column; /* Stack header, log, controls vertically */
-    min-height: 350px; /* Minimum height for each NPC box */
+    flex-direction: column; 
+    min-height: 320px; /* Reduced min-height */
 }
 
+/* Header within each NPC's chat box */
 .npc-header {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px dashed #595377; /* Subtle separator */
+    padding: 6px 10px; /* Reduced padding */
+    background-color: #34495e; 
+    border-bottom: 1px solid #7c90a0; /* Thinner separator */
+    border-top-left-radius: 2px; 
+    border-top-right-radius: 2px;
 }
 
 .npc-header-portrait {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%; /* Circular portrait */
-    object-fit: cover; /* Ensure image covers the area well */
-    border: 2px solid #8a6fab; /* Accent border */
-    margin-right: 12px;
-    flex-shrink: 0; /* Prevent portrait from shrinking if name is long */
-    background-color: #3e3a50; /* Fallback if image fails */
+    width: 36px; /* Slightly smaller portrait */
+    height: 36px;
+    border-radius: 2px; 
+    object-fit: cover;
+    border: 1px solid #a8c0d8; 
+    margin-right: 8px; /* Reduced margin */
+    flex-shrink: 0; 
+    background-color: #2c3e50; 
 }
 
 .npc-header-name {
-    font-family: 'Press Start 2P', cursive; /* Pixel font for NPC names */
-    font-size: 1.1em; /* Slightly larger for emphasis */
-    color: #ffe066; /* Light gold, stands out */
-    text-shadow: 1px 1px #222; /* Subtle shadow for depth */
+    font-family: 'Press Start 2P', cursive; 
+    font-size: 0.9em; /* Slightly smaller name */
+    color: #f1c40f; 
+    text-shadow: 1px 1px #2c3e50; 
 }
 
-.npc-chat-log { /* Individual log for each NPC */
-    flex-grow: 1; /* This makes the chat log take available vertical space */
-    min-height: 180px; /* Minimum height for the chat log area */
-    max-height: 350px; /* Maximum height before scrolling */
-    overflow-y: auto; /* Enable vertical scrollbar if content exceeds max-height */
-    padding: 10px;
-    background-color: #3e3a50; /* Darker, inset background for the log */
-    border-radius: 4px;
-    border: 1px solid #595377; /* Inner border */
-    margin-bottom: 15px; /* Space before the controls */
+/* Individual Chat Log for each NPC */
+.npc-chat-log { 
+    flex-grow: 1; 
+    min-height: 150px; /* Reduced min-height */
+    max-height: 280px; /* Reduced max-height */
+    overflow-y: auto; 
+    padding: 10px; /* Reduced padding */
+    background-color: #e4e0d8; 
+    color: #2c3e50; 
+    font-family: 'Noto Sans JP', 'VT323', sans-serif; 
+    font-size: 16px; /* Slightly smaller font for dialogue */
+    line-height: 1.45; /* Adjusted line height */
+    border-bottom: 1px solid #7c90a0; /* Thinner separator */
 }
-.npc-chat-log .log-placeholder { /* Placeholder text within individual logs */
-    color: #888;
+.npc-chat-log .log-placeholder { 
+    color: #666055; 
     font-style: italic;
     text-align: center;
-    padding: 15px;
+    padding: 10px; /* Reduced padding */
     font-size: 0.9em;
 }
 
-/* Chat entry styles (ensure these are comprehensive) */
+/* Chat Entries and Bubbles */
 .chat-entry {
-    margin-bottom: 12px;
-    padding: 0px; /* Padding will be on the bubble */
-    display: flex; /* For potential future use with GM/Player messages */
-    max-width: 100%; 
+    margin-bottom: 8px; /* Reduced space */
+    display: flex; 
 }
 
-/* Specific styling for NPC's own lines in their box */
 .chat-entry.npc .chat-bubble { 
-    background-color: #595377; 
-    border: 1px solid #8a6fab;
-    /* NPCs lines are typically left-aligned by default in their own box */
+    background-color: transparent; 
+    border: none;
+    padding: 0; 
+    color: #2c3e50; 
+}
+.chat-entry.npc .chat-bubble .dialogue-text::before {
+    content: "“"; 
+    margin-right: 1px; /* Adjusted margin */
+    font-weight: bold;
+}
+.chat-entry.npc .chat-bubble .dialogue-text::after {
+    content: "”";
+    margin-left: 1px; /* Adjusted margin */
+    font-weight: bold;
 }
 
-/* Styling for GM narration or Player input if added later */
 .chat-entry.gm .chat-bubble, 
-.chat-entry.player .chat-bubble { 
-    background-color: #4e6470; 
-    border: 1px solid #6f8ea0;
-    margin-left: auto; /* Align GM/Player messages to the right */
-    max-width: 85%; /* Don't let player/gm bubbles take full width */
+.chat-entry.system .chat-bubble,
+.chat-entry.system-info .chat-bubble,
+.chat-entry.system-error .chat-bubble,
+.chat-entry.system-success .chat-bubble { 
+    background-color: #d0c8bc; 
+    border: 1px solid #b0a89c; 
+    padding: 5px 8px; /* Reduced padding */
+    border-radius: 3px; /* Smaller radius */
+    color: #333; 
+    font-size: 0.85em; /* Slightly smaller */
 }
-
-.chat-entry.system .chat-bubble {
-    background-color: #333;
-    border: 1px solid #555;
+.chat-entry.system .chat-bubble { 
     font-style: italic;
-    color: #aaa;
     text-align: center;
-    width: 100%; /* System messages can span full width */
-    padding: 5px 8px;
-    font-size: 0.85em;
+}
+.chat-entry.system-error .chat-bubble {
+    color: #a94442; 
+    background-color: #f2dede;
+    border-color: #ebccd1;
+}
+.chat-entry.system-success .chat-bubble {
+    color: #3c763d; 
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+}
+.chat-entry.npc-thinking .chat-bubble { 
+    font-style: italic;
+    color: #555045; 
+    background-color: transparent;
+    border: none;
+    padding: 0;
 }
 
-.chat-bubble { /* General bubble style */
-    padding: 10px 15px;
-    border-radius: 8px;
-    /* flex-grow: 1; /* Let bubble take available horizontal space */
-    /* word-wrap: break-word; /* Ensure long words break */
-    /* overflow-wrap: break-word; */
-}
-
-/* Speaker name inside the bubble (useful if GM/System messages appear in NPC log) */
 .chat-bubble .speaker-name { 
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.8em; 
-    color: #ffcc00; /* Gold for speaker name */
-    margin-bottom: 5px;
+    font-size: 0.8em; /* Slightly smaller */
+    color: #4a4166; 
+    margin-bottom: 2px; /* Reduced margin */
     display: block;
 }
 .chat-bubble .dialogue-text {
-    font-size: 1em;
-    line-height: 1.45;
-    color: #e0e0e0; /* Main dialogue text color */
-    white-space: pre-wrap; /* Preserve line breaks from input/AI */
+    white-space: pre-wrap; 
 }
 
-.npc-dialogue-controls {
-    margin-top: auto; /* Pushes controls to the bottom of the .npc-dialogue-container */
-    padding-top: 15px;
-    border-top: 1px dashed #595377; /* Separator above controls */
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive button layout */
-    gap: 8px; /* Space between buttons */
+/* Dialogue Options (if displayed) */
+.dialogue-options-container {
+    margin-top: 8px; /* Reduced margin */
+    padding: 8px; /* Reduced padding */
+    background-color: rgba(44, 62, 80, 0.1); 
+    border-top: 1px dashed #7c90a0;
 }
-
-/* Styles for .jrpg-button-small (ensure it's defined, e.g., in main style.css or here) */
-.jrpg-button-small {
-    font-family: 'VT323', monospace; /* Readable font for smaller buttons */
-    background-color: #595377; /* Button background */
-    color: #e0e0e0; /* Button text color */
-    border: 1px solid #8a6fab; /* Button border */
-    padding: 8px 10px; /* Padding for buttons */
-    font-size: 0.9em; /* Font size for small buttons */
-    cursor: pointer;
-    border-radius: 4px;
-    text-align: center;
-    transition: background-color 0.2s, transform 0.1s;
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
-}
-.jrpg-button-small:hover:not(:disabled) {
-    background-color: #6a6292; /* Hover color */
-    transform: translateY(-1px); /* Slight lift on hover */
-}
-.jrpg-button-small:disabled {
-    background-color: #444; /* Disabled state */
-    color: #777;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.scene-input-area {
-    /* .jrpg-box styling is applied from main style.css */
-    margin-top: 20px; /* Space above the scene input area */
-    padding: 20px;
-}
-.scene-input-area h2 {
+.dialogue-options-title {
     font-family: 'Press Start 2P', cursive;
-    color: #ffcc00;
-    font-size: 1.3em;
-    margin-bottom: 15px;
+    font-size: 0.75em; /* Smaller title */
+    color: #34495e; 
+    margin-bottom: 6px; /* Reduced margin */
     text-align: center;
 }
-
-.jrpg-textarea { /* From main style.css, ensure it's styled appropriately */
-    width: calc(100% - 22px); /* Full width accounting for padding and border */
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    min-height: 80px; /* Adjust as needed */
+.dialogue-option.jrpg-button-small { 
+    background-color: #7f8c8d; 
+    color: #ecf0f1;
+    border-color: #95a5a6;
+    display: block; 
+    width: 100%;
+    margin-bottom: 4px; /* Reduced margin */
+    padding: 5px 8px; /* Reduced padding */
+    font-size: 0.9em; /* Ensure consistency with other small buttons */
 }
-#start-scene-button { /* Uses .jrpg-button from main style.css */
-    display: block;
-    margin: 20px auto 0 auto; /* Center the button below textarea */
+.dialogue-option.jrpg-button-small:hover {
+    background-color: #95a5a6;
+    color: #2c3e50;
 }
 
-/* Responsive adjustments for smaller screens */
+/* Controls below each NPC's chat log */
+.npc-dialogue-controls {
+    padding: 10px; /* Reduced padding */
+    background-color: #34495e; 
+    border-bottom-left-radius: 2px; 
+    border-bottom-right-radius: 2px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller min button width */
+    gap: 6px; /* Reduced gap */
+}
+.npc-dialogue-controls .jrpg-button-small {
+    background-color: #7f8c8d; 
+    color: #ecf0f1;
+    border: 1px solid #95a5a6;
+    font-size: 0.85em; /* Slightly smaller */
+    padding: 5px 6px; /* Reduced padding */
+}
+.npc-dialogue-controls .jrpg-button-small:hover:not(:disabled) {
+    background-color: #95a5a6;
+    color: #2c3e50;
+}
+
+/* Scene Input Area */
+.scene-input-area {
+    background-color: #2c3e50; 
+    border: 2px solid #7c90a0; 
+    margin-top: 15px; /* Reduced margin */
+    padding: 15px; /* Reduced padding */
+}
+.scene-input-area h2 { 
+    font-family: 'Press Start 2P', cursive;
+    color: #f1c40f; 
+    font-size: 1.2em; /* Slightly smaller */
+    margin-bottom: 10px; /* Reduced margin */
+    text-align: center;
+}
+.jrpg-textarea { 
+    background-color: #e4e0d8; 
+    color: #2c3e50; 
+    border: 2px solid #7c90a0; 
+    font-family: 'Noto Sans JP', 'VT323', sans-serif; 
+    font-size: 1em; /* Slightly smaller */
+    min-height: 70px; /* Reduced min-height */
+    padding: 8px; /* Reduced padding */
+}
+.jrpg-textarea:focus {
+    border-color: #f1c40f; 
+    box-shadow: 0 0 6px rgba(241, 196, 15, 0.5); /* Reduced shadow */
+}
+#start-scene-button { 
+    display: block;
+    margin: 15px auto 0 auto; /* Reduced top margin */
+    padding: 10px 20px; /* Slightly smaller button */
+    font-size: 0.95em; /* Slightly smaller font */
+    background-color: #e74c3c; 
+    color: #ffffff;
+    border-color: #c0392b;
+}
+#start-scene-button:hover:not(:disabled) {
+    background-color: #c0392b;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
     .npc-interaction-grid {
-        grid-template-columns: 1fr; /* Stack NPC boxes on smaller screens */
+        grid-template-columns: 1fr; 
     }
-    .scene-main-content {
-        gap: 15px; /* Reduce gap on smaller screens */
+    .npc-dialogue-controls {
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); 
+    }
+    .npc-dialogue-container {
+        min-height: 300px; /* Further reduce min-height on small screens */
+    }
+    .npc-chat-log {
+        min-height: 120px;
+        max-height: 250px;
     }
 }
