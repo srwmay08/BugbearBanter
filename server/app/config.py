@@ -3,12 +3,18 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai # Ensure this import is here
 
-load_dotenv() # Load environment variables from .env file
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env') # Points to server/.env
 
-# Configure API Key for Google Generative AI
-# Fetch the key from environment (loaded by load_dotenv() or set in terminal)
-# and assign it to the Python variable GEMINI_API_KEY.
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+load_dotenv(dotenv_path)
+print(f"--- PRINT DEBUG [config.py]: Attempted to load .env from: {dotenv_path}")
+print(f"--- PRINT DEBUG [config.py]: GEMINI_API_KEY from os.getenv: {os.getenv('GEMINI_API_KEY')}")
+print(f"--- PRINT DEBUG [config.py]: GOOGLE_API_KEY from os.getenv: {os.getenv('GOOGLE_API_KEY')}")
+
+    
+# This is where the API key is set for the Flask app config
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') # If you use this as an alternative
+GEMINI_MODEL_NAME = os.getenv('GEMINI_MODEL_NAME', 'gemini-1.5-flash-latest')
 
 # Now, check if the Python variable GEMINI_API_KEY is empty
 if not GEMINI_API_KEY: # This is your line 11 (or around there)
@@ -17,6 +23,10 @@ if not GEMINI_API_KEY: # This is your line 11 (or around there)
 # If the script proceeds, GEMINI_API_KEY has a value
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash") # Assuming you still want this model
+
+# Explicitly print what's being set in the Config class
+print(f"--- PRINT DEBUG [config.py - Config Class]: GEMINI_API_KEY = {GEMINI_API_KEY}")
+print(f"--- PRINT DEBUG [config.py - Config Class]: GOOGLE_API_KEY = {GOOGLE_API_KEY}")
 
 NPC_DIR = "npc_data"
 
