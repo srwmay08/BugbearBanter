@@ -2,28 +2,29 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const npcSelectionArea = document.getElementById('npc-selection-area');
     const selectedNpcListElement = document.getElementById('selected-npc-list');
-    const noNpcsSelectedElement = document.getElementById('no-npcs-selected'); // Make sure this element exists in index.html
+    const noNpcsSelectedElement = document.getElementById('no-npcs-selected');
     const proceedToSceneButton = document.getElementById('proceed-to-scene-button');
-    const loadingMessageElement = document.querySelector('#npc-selection-area .loading-message'); // Get the loading message
-
-    let allAvailableNPCs = []; // To store fetched NPCs (global + user-specific)
-    let selectedNPCs = new Map();
+    // Attempt to find the loading message element within the npcSelectionArea
+    const loadingMessageElement = npcSelectionArea ? npcSelectionArea.querySelector('.loading-message') : null;
 
     // Ensure essential elements exist
     if (!npcSelectionArea || !selectedNpcListElement || !proceedToSceneButton || !noNpcsSelectedElement) {
-        console.error('CRITICAL UI ERROR: One or more essential UI elements for NPC selection are missing from index.html!');
+        console.error('CRITICAL UI ERROR: One or more essential UI elements for NPC selection are missing from index.html! Ensure npc-selection-area, selected-npc-list, no-npcs-selected, and proceed-to-scene-button exist.');
         if (npcSelectionArea) {
             npcSelectionArea.innerHTML = '<p style="color:red; text-align:center;">Error: UI setup incomplete. Please check console and HTML structure of index.html.</p>';
         }
         return;
     }
     
+    let allAvailableNPCs = []; 
+    let selectedNPCs = new Map();
+
     // Check login status first
     try {
         const statusResponse = await fetch('/api/auth/status');
-        if (!statusResponse.ok) { // Handles network errors or non-2xx responses before JSON parsing
+        if (!statusResponse.ok) {
             console.error('Auth status check failed with status:', statusResponse.status);
-            window.location.href = '/login';
+            window.location.href = '/login'; // Redirect if status check itself fails
             return;
         }
         const statusResult = await statusResponse.json();
@@ -31,7 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.location.href = '/login'; // Redirect to login if not authenticated
             return; 
         }
-        // User is logged in, can proceed. statusResult.user has user details if needed.
+        // User is logged in, can proceed.
     } catch (e) {
         console.error("Error checking auth status on NPC selection page:", e);
         window.location.href = '/login'; // Redirect on any other error
@@ -40,39 +41,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch Combined NPCs (Global + User's Own)
     try {
+        if(loadingMessageElement) loadingMessageElement.style.display = 'block'; // Show loading message
+
         const response = await fetch('/api/npcs'); 
         if (!response.ok) {
-            if (response.status === 401) { // Unauthorized (should have been caught by status check, but good to have)
+            if (response.status === 401) { 
                 window.location.href = '/login';
-                return Promise.reject('User not authenticated, redirecting.'); // Prevent further processing
+                return Promise.reject('User not authenticated, redirecting.');
             }
             throw new Error(`HTTP error fetching NPCs! Status: ${response.status}`);
         }
         allAvailableNPCs = await response.json();
 
+        if(loadingMessageElement) loadingMessageElement.style.display = 'none'; // Hide loading message
+
         if (!Array.isArray(allAvailableNPCs)) {
             console.error('Fetched NPC data is not an array:', allAvailableNPCs);
-            if(loadingMessageElement) loadingMessageElement.remove();
             npcSelectionArea.innerHTML = '<p style="color:red;">Error: NPC data format is incorrect.</p>';
             return;
         }
         if (allAvailableNPCs.length === 0) {
-            if(loadingMessageElement) loadingMessageElement.remove();
             npcSelectionArea.innerHTML = '<p>No NPCs available. You can upload your own NPCs from the dashboard, or check if default NPCs are loaded in the database.</p> <a href="/dashboard" class="jrpg-button-small">Go to Dashboard</a>';
             return;
         }
-        if(loadingMessageElement) loadingMessageElement.remove(); // Remove "Loading NPCs..." message
         displayNPCs(allAvailableNPCs);
     } catch (error) {
         console.error('Error fetching or processing NPCs on selection page:', error);
         if (error.message !== 'User not authenticated, redirecting.') {
-            if(loadingMessageElement) loadingMessageElement.remove();
+            if(loadingMessageElement) loadingMessageElement.style.display = 'none';
             npcSelectionArea.innerHTML = `<p style="color:red;">Error loading NPCs: ${error.message}.</p>`;
         }
     }
 
     function displayNPCs(npcs) {
-        npcSelectionArea.innerHTML = ''; // Clear previous content or loading messages
+        npcSelectionArea.innerHTML = ''; // Clear previous content (like "Loading NPCs...")
 
         npcs.forEach(npc => {
             const card = document.createElement('div');
@@ -80,13 +82,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.dataset.npcId = npc._id; 
 
             const npcInitials = npc.name ? npc.name.substring(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '') : '??';
-            // Ensure stringToColor is defined or copied here if not globally available
             const placeholderBgColor = stringToColor(npc.name || "defaultNPC"); 
             const placeholderTextColor = 'FFFFFF';
             const placeholderImageUrl = `https://placehold.co/80x80/${placeholderBgColor}/${placeholderTextColor}?text=${npcInitials}&font=source-sans-pro`;
 
-            // Use npc.personality_traits directly as it's a string
-            const traitsDisplay = npc.personality_traits && npc.personality_traits.trim().length > 0 
+            const traitsDisplay = npc.personality_traits && typeof npc.personality_traits === 'string' && npc.personality_traits.trim().length > 0 
                 ? `<p>Traits: ${npc.personality_traits}</p>` 
                 : '<p>Traits: Not specified.</p>';
 
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             npcSelectionArea.appendChild(card);
         });
-        updateSelectedNPCListUI(); // Update UI after displaying
+        updateSelectedNPCListUI(); 
         updateProceedButtonState();
     }
 
@@ -125,9 +125,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updateSelectedNPCListUI() {
         selectedNpcListElement.innerHTML = ''; 
         if (selectedNPCs.size === 0) {
-            if (noNpcsSelectedElement) selectedNpcListElement.appendChild(noNpcsSelectedElement);
-            else selectedNpcListElement.innerHTML = '<li>None yet. Click an NPC to select.</li>'; // Fallback
+            noNpcsSelectedElement.style.display = 'list-item'; // Show the "None yet" item
+            selectedNpcListElement.appendChild(noNpcsSelectedElement);
         } else {
+            noNpcsSelectedElement.style.display = 'none'; // Hide it if NPCs are selected
             selectedNPCs.forEach(npc => {
                 const listItem = document.createElement('li');
                 listItem.textContent = npc.name;
@@ -147,7 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     
-    function stringToColor(str) { // Make sure this utility is available
+    function stringToColor(str) { 
         let hash = 0;
         if (!str || str.length === 0) return 'CCCCCC';
         for (let i = 0; i < str.length; i++) {
@@ -158,7 +159,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         return '00000'.substring(0, 6 - color.length) + color;
     }
 
-    // Initial UI updates - these are called after NPCs are fetched and displayed now.
-    // updateSelectedNPCListUI(); 
-    // updateProceedButtonState();
+    // Initial UI updates are called after successful NPC fetch
 });

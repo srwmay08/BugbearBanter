@@ -40,6 +40,7 @@
                 <div id="world-info-display">
                     <p>Click the button to load world information.</p>
                 </div>
+                
             </div>
 <div id="edit-npc-modal" class="modal">
         <div class="modal-content jrpg-box">
@@ -97,6 +98,22 @@
                     <textarea id="edit-mannerisms" name="mannerisms" class="jrpg-textarea" rows="2"></textarea>
                 </div>
                 <button type="submit" class="jrpg-button">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="world-item-modal" class="modal">
+        <div class="modal-content jrpg-box">
+            <span class="close-modal-button" id="cancel-world-item">&times;</span>
+            <h2 id="world-item-modal-title">Manage World Item</h2>
+            <form id="world-item-form">
+                <input type="hidden" id="edit-world-item-id" name="_id">
+                <input type="hidden" id="edit-world-item-type" name="item_type_hidden"> 
+                
+                <div id="world-item-fields-container">
+                    </div>
+
+                <button type="submit" class="jrpg-button">Save World Item</button>
             </form>
         </div>
     </div>
