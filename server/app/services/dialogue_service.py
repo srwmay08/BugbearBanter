@@ -54,7 +54,6 @@ class DialogueService:
             if prominent_religions:
                 knowledge_parts.append("\nProminent Deities or Beliefs:")
                 for religion in prominent_religions:
-                    # Adjust based on your actual world_religions.json structure
                     domains = religion.get('domains', [])
                     domains_str = ', '.join(domains) if isinstance(domains, list) else str(domains)
                     knowledge_parts.append(f"- {religion.get('name')}: Known for {domains_str}. Common saying: \"{religion.get('common_saying','')}\" General Influence: {religion.get('general_influence', '')[:100]}...")
@@ -88,15 +87,21 @@ class DialogueService:
         prompt_lines.append(f"Class/Role: {npc_profile.get('class', 'Unknown')}") 
         prompt_lines.append(f"Appearance: {npc_profile.get('appearance', 'Not clearly described.')}")
         
-        # --- CORRECTED PERSONALITY TRAITS HANDLING ---
-        traits = npc_profile.get('personality_traits')
-        if traits and isinstance(traits, str): # Ensure it's a string
-            prompt_lines.append(f"Core Personality Traits: {traits}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
-        elif traits and isinstance(traits, list): # Fallback if it was accidentally an array
-             prompt_lines.append(f"Core Personality Traits: {', '.join(traits)}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
+        # --- ENHANCED LOGGING FOR PERSONALITY TRAITS ---
+        traits_from_profile = npc_profile.get('personality_traits')
+        current_app.logger.info(f"--- DEBUG TRAITS: Raw 'personality_traits' from npc_profile for {npc_name}: '{traits_from_profile}' (Type: {type(traits_from_profile)}) ---")
+
+        if traits_from_profile and isinstance(traits_from_profile, str):
+            prompt_lines.append(f"Core Personality Traits: {traits_from_profile}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
+            current_app.logger.info(f"--- DEBUG TRAITS: Using traits as STRING for {npc_name}: '{traits_from_profile}' ---")
+        elif traits_from_profile and isinstance(traits_from_profile, list): 
+             joined_traits = ', '.join(traits_from_profile)
+             prompt_lines.append(f"Core Personality Traits: {joined_traits}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
+             current_app.logger.warning(f"--- DEBUG TRAITS: 'personality_traits' for {npc_name} was a LIST. Joined to: '{joined_traits}' ---")
         else:
             prompt_lines.append("Core Personality Traits: Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context).")
-        # --- END CORRECTION ---
+            current_app.logger.info(f"--- DEBUG TRAITS: 'personality_traits' for {npc_name} is None or not string/list. Using default. ---")
+        # --- END ENHANCED LOGGING ---
 
         if npc_profile.get('backstory'):
             prompt_lines.append(f"Key Backstory Elements: {npc_profile['backstory'][:400]}...") 
@@ -172,12 +177,10 @@ class DialogueService:
         if action_type == "submit_memory":
             dialogue_to_remember = payload.get("dialogue_exchange", "an important event")
             current_app.logger.info(f"NPC Action: '{npc_name}' is 'remembering': {dialogue_to_remember[:100]}...")
-            # mongo.db.npcs.update_one({"_id": npc_id}, {"$push": {"memories": {"text": dialogue_to_remember, "timestamp": datetime.utcnow()}}})
             return {"status": "success", "message": f"'{dialogue_to_remember[:30]}...' noted for {npc_name} (simulated)."}
 
         elif action_type == "undo_memory":
             current_app.logger.info(f"NPC Action: '{npc_name}' is attempting to 'undo last memory'.")
-            # mongo.db.npcs.update_one({"_id": npc_id}, {"$pop": {"memories": 1}})
             return {"status": "success", "message": f"Last memory item for {npc_name} (simulated) undone."}
 
         elif action_type == "next_topic" or action_type == "regenerate_topics":
@@ -185,12 +188,14 @@ class DialogueService:
             world_knowledge_summary = self._get_world_knowledge_summary()
             
             traits_for_prompt = npc_profile.get('personality_traits', 'Unknown')
-            if isinstance(traits_for_prompt, list): # Should be string now
+            if isinstance(traits_for_prompt, list): 
                 traits_for_prompt = ', '.join(traits_for_prompt)
+            current_app.logger.info(f"--- DEBUG TRAITS (for Topic Gen): Using traits for {npc_name}: '{traits_for_prompt}' ---")
+
 
             topic_prompt_lines = [
                 f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile below) is in the following scene, with some general world context.",
-                f"NPC Profile Summary: Personality: {traits_for_prompt}. Motivations: {npc_profile.get('motivations', 'Unknown')}.", # Use corrected traits
+                f"NPC Profile Summary: Personality: {traits_for_prompt}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
                 f"World Context: {world_knowledge_summary[:300]}...",
                 f"Current Scene: {scene_description}",
                 f"Recent Conversation with {npc_name}:"
@@ -206,14 +211,14 @@ class DialogueService:
 
             try:
                 if not self.model: return {"status": "error", "message": "AI model not initialized."}
-                topic_gen_config = genai.types.GenerationConfig(temperature=0.75, max_output_tokens=150) # Slightly increased temp
+                topic_gen_config = genai.types.GenerationConfig(temperature=0.75, max_output_tokens=150)
                 safety_settings_topics = self.get_default_safety_settings()
 
                 response = self.model.generate_content(topic_prompt, generation_config=topic_gen_config, safety_settings=safety_settings_topics)
                 
                 if response.parts:
                     topics_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
-                    suggested_topics = [topic.strip().lstrip('- ').strip('"') for topic in topics_text.split('\n') if topic.strip()] # Also strip quotes
+                    suggested_topics = [topic.strip().lstrip('- ').strip('"') for topic in topics_text.split('\n') if topic.strip()]
                     current_app.logger.info(f"Generated topics for {npc_name}: {suggested_topics}")
                     return {"status": "success", "action": action_type, "data": {"new_topics": suggested_topics, "message": f"New topics generated for {npc_name}."}}
                 else:
@@ -230,12 +235,14 @@ class DialogueService:
             current_app.logger.info(f"NPC Action: '{npc_name}' - Generating top 5 dialogue options...")
             
             traits_for_prompt = npc_profile.get('personality_traits', 'Unknown')
-            if isinstance(traits_for_prompt, list): # Should be string now
+            if isinstance(traits_for_prompt, list): 
                 traits_for_prompt = ', '.join(traits_for_prompt)
+            current_app.logger.info(f"--- DEBUG TRAITS (for Top5 Options): Using traits for {npc_name}: '{traits_for_prompt}' ---")
+
 
             options_prompt_lines = [
                 f"You are roleplaying as {npc_name}. Profile and scene context are below.",
-                f"NPC Profile Summary: Personality: {traits_for_prompt}. Motivations: {npc_profile.get('motivations', 'Unknown')}.", # Use corrected traits
+                f"NPC Profile Summary: Personality: {traits_for_prompt}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
                 f"Current Scene: {scene_description}",
                 f"Recent Conversation with {npc_name}:"
             ]
@@ -254,7 +261,7 @@ class DialogueService:
 
                 if response.parts:
                     options_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
-                    dialogue_options = [opt.strip().lstrip('0123456789. ').strip('"') for opt in options_text.split('\n') if opt.strip()] # Also strip quotes
+                    dialogue_options = [opt.strip().lstrip('0123456789. ').strip('"') for opt in options_text.split('\n') if opt.strip()]
                     current_app.logger.info(f"Generated dialogue options for {npc_name}: {dialogue_options}")
                     return {"status": "success", "action": action_type, "data": {"dialogue_options": dialogue_options[:5], "message": f"Top dialogue options for {npc_name}."}}
                 else: 
