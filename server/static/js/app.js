@@ -13,17 +13,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (npcSelectionArea) {
             npcSelectionArea.innerHTML = '<p style="color:red; text-align:center;">Error: UI setup incomplete. Please check console and HTML structure of index.html.</p>';
         }
+        // Disable button if elements are missing to prevent further errors
+        if(proceedToSceneButton) proceedToSceneButton.disabled = true;
         return;
     }
     
     let allAvailableNPCs = []; 
     let selectedNPCs = new Map();
 
+    // Initial UI state
+    updateSelectedNPCListUI(); // Show "None yet"
+    updateProceedButtonState(); // Disable button
+
     // Check login status first
     try {
         const statusResponse = await fetch('/api/auth/status');
         if (!statusResponse.ok) {
             console.error('Auth status check failed with status:', statusResponse.status);
+            if(loadingMessageElement) loadingMessageElement.textContent = 'Authentication error.';
             window.location.href = '/login'; // Redirect if status check itself fails
             return;
         }
@@ -35,17 +42,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         // User is logged in, can proceed.
     } catch (e) {
         console.error("Error checking auth status on NPC selection page:", e);
-        window.location.href = '/login'; // Redirect on any other error
-        return;
+        if(loadingMessageElement) loadingMessageElement.textContent = 'Error checking authentication.';
+        // Potentially redirect to login, or show an error that user needs to be logged in.
+        // For now, we'll let it proceed to fetch NPCs, which should then fail with 401 if session is truly gone.
+        // window.location.href = '/login'; 
+        // return;
     }
 
     // Fetch Combined NPCs (Global + User's Own)
     try {
-        if(loadingMessageElement) loadingMessageElement.style.display = 'block'; // Show loading message
+        if(loadingMessageElement) loadingMessageElement.style.display = 'block'; 
 
         const response = await fetch('/api/npcs'); 
         if (!response.ok) {
             if (response.status === 401) { 
+                if(loadingMessageElement) loadingMessageElement.textContent = 'Authentication required.';
                 window.location.href = '/login';
                 return Promise.reject('User not authenticated, redirecting.');
             }
@@ -53,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         allAvailableNPCs = await response.json();
 
-        if(loadingMessageElement) loadingMessageElement.style.display = 'none'; // Hide loading message
+        if(loadingMessageElement) loadingMessageElement.style.display = 'none';
 
         if (!Array.isArray(allAvailableNPCs)) {
             console.error('Fetched NPC data is not an array:', allAvailableNPCs);
@@ -74,7 +85,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function displayNPCs(npcs) {
-        npcSelectionArea.innerHTML = ''; // Clear previous content (like "Loading NPCs...")
+        if (!npcSelectionArea) return; // Guard against missing element
+        npcSelectionArea.innerHTML = ''; 
 
         npcs.forEach(npc => {
             const card = document.createElement('div');
@@ -123,12 +135,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateSelectedNPCListUI() {
+        if (!selectedNpcListElement || !noNpcsSelectedElement) return;
         selectedNpcListElement.innerHTML = ''; 
         if (selectedNPCs.size === 0) {
-            noNpcsSelectedElement.style.display = 'list-item'; // Show the "None yet" item
+            noNpcsSelectedElement.style.display = 'list-item'; 
             selectedNpcListElement.appendChild(noNpcsSelectedElement);
         } else {
-            noNpcsSelectedElement.style.display = 'none'; // Hide it if NPCs are selected
+            noNpcsSelectedElement.style.display = 'none'; 
             selectedNPCs.forEach(npc => {
                 const listItem = document.createElement('li');
                 listItem.textContent = npc.name;
@@ -138,15 +151,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateProceedButtonState() {
+        if (!proceedToSceneButton) return;
         proceedToSceneButton.disabled = selectedNPCs.size === 0;
     }
 
-    proceedToSceneButton.addEventListener('click', () => {
-        if (selectedNPCs.size > 0) {
-            const selectedIds = Array.from(selectedNPCs.keys());
-            window.location.href = `/scene?npcs=${selectedIds.join(',')}`;
-        }
-    });
+    if (proceedToSceneButton) {
+        proceedToSceneButton.addEventListener('click', () => {
+            if (selectedNPCs.size > 0) {
+                const selectedIds = Array.from(selectedNPCs.keys());
+                window.location.href = `/scene?npcs=${selectedIds.join(',')}`;
+            }
+        });
+    }
     
     function stringToColor(str) { 
         let hash = 0;
@@ -158,6 +174,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         let color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
         return '00000'.substring(0, 6 - color.length) + color;
     }
-
-    // Initial UI updates are called after successful NPC fetch
 });
