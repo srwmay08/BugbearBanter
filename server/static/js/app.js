@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="npc-details">
                     <h3>${npc.name || 'Unnamed NPC'}</h3>
                     <p><em>${npc.appearance || 'No description available.'}</em></p>
-                    ${npc.personality_traits && npc.personality_traits.length > 0 ? `<p>Traits: ${npc.personality_traits.join(', ')}</p>` : '<p>Traits: Not specified.</p>'}
+                    ${npc.personality_traits && npc.personality_traits.trim().length > 0 ? `<p>Traits: ${npc.personality_traits}</p>` : '<p>Traits: Not specified.</p>'}
                 </div>
             `;
 
