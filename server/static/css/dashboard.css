@@ -1,0 +1,49 @@
+/* server/static/css/dashboard.css */
+.dashboard-page-container {
+    max-width: 800px; /* Or your preferred width */
+}
+
+.dashboard-main-content .jrpg-box {
+    margin-bottom: 20px;
+}
+
+#welcome-message {
+    font-size: 1.2em;
+    color: #e0d090;
+    margin-bottom: 10px;
+}
+
+#logout-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+.npc-upload-area input[type="file"] {
+    display: block;
+    margin: 10px auto 15px auto;
+    padding: 8px;
+    background-color: #2f2c40;
+    border: 1px solid #4a4166;
+    color: #e0e0e0;
+    border-radius: 4px;
+}
+
+.user-npcs-area ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.user-npcs-area li {
+    background-color: #4a4660;
+    padding: 8px 12px;
+    margin: 5px 0;
+    border-radius: 4px;
+    border: 1px solid #6a6292;
+    color: #e0e0e0;
+}
+
+.message { /* For upload messages etc. */
+    margin-top: 10px;
+    font-size: 0.9em;
+}
