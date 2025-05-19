@@ -41,6 +41,66 @@
                     <p>Click the button to load world information.</p>
                 </div>
             </div>
+<div id="edit-npc-modal" class="modal">
+        <div class="modal-content jrpg-box">
+            <span class="close-modal-button" id="cancel-edit-npc">&times;</span>
+            <h2>Edit NPC</h2>
+            <form id="edit-npc-form">
+                <input type="hidden" id="edit-npc-id" name="_id">
+                
+                <div class="form-group">
+                    <label for="edit-name">Name:</label>
+                    <input type="text" id="edit-name" name="name" class="jrpg-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-race">Race:</label>
+                    <input type="text" id="edit-race" name="race" class="jrpg-input">
+                </div>
+                <div class="form-group">
+                    <label for="edit-class">Class/Role:</label>
+                    <input type="text" id="edit-class" name="class" class="jrpg-input">
+                </div>
+                 <div class="form-group">
+                    <label for="edit-appearance">Appearance:</label>
+                    <textarea id="edit-appearance" name="appearance" class="jrpg-textarea" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-personality_traits">Personality Traits:</label>
+                    <textarea id="edit-personality_traits" name="personality_traits" class="jrpg-textarea" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-ideals">Ideals:</label>
+                    <textarea id="edit-ideals" name="ideals" class="jrpg-textarea" rows="2"></textarea>
+                </div>
+                 <div class="form-group">
+                    <label for="edit-bonds">Bonds:</label>
+                    <textarea id="edit-bonds" name="bonds" class="jrpg-textarea" rows="2"></textarea>
+                </div>
+                 <div class="form-group">
+                    <label for="edit-flaws">Flaws:</label>
+                    <textarea id="edit-flaws" name="flaws" class="jrpg-textarea" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-backstory">Backstory:</label>
+                    <textarea id="edit-backstory" name="backstory" class="jrpg-textarea" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-motivations">Motivations:</label>
+                    <textarea id="edit-motivations" name="motivations" class="jrpg-textarea" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-speech_patterns">Speech Patterns:</label>
+                    <textarea id="edit-speech_patterns" name="speech_patterns" class="jrpg-textarea" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-mannerisms">Mannerisms:</label>
+                    <textarea id="edit-mannerisms" name="mannerisms" class="jrpg-textarea" rows="2"></textarea>
+                </div>
+                <button type="submit" class="jrpg-button">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
             </main>
     
         <footer class="jrpg-footer">

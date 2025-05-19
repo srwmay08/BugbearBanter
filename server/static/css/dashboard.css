@@ -97,3 +97,52 @@
 .world-info-list strong {
     color: #e0d090; /* JRPG gold text for titles */
 }
+
+
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #2f2c40; /* Darker content background from style.css */
+    margin: 10% auto; /* 10% from the top and centered */
+    padding: 25px;
+    border: 3px solid #4a4166;
+    border-radius: 8px;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 600px; /* Maximum width */
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+.close-modal-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.close-modal-button:hover,
+.close-modal-button:focus {
+    color: #f0e0a0; /* JRPG gold */
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#edit-npc-form .form-group {
+    margin-bottom: 12px;
+}
+#edit-npc-form .jrpg-textarea {
+    min-height: 60px;
+    font-size: 1em;
+}
