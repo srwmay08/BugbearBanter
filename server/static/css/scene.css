@@ -1,117 +1,130 @@
 /* static/css/scene.css */
 
+/* New Color Palette Variables */
+:root {
+    --khaki: #9E967F;
+    --bistre: #32281E;
+    --seal-brown: #6A2709;
+    --dark-purple: #180B1D;
+    --black: #000000;
+    --text-light: #E0E0E0; /* General light text */
+    --text-parchment: var(--bistre); /* Text on parchment backgrounds */
+    --accent-gold: #f0e0a0; /* From previous FFT style, can be adjusted */
+}
+
 /* General Scene Layout */
 .scene-page-container {
     max-width: 1600px; 
-    margin: 10px auto; /* Reduced top/bottom margin */
-    padding: 15px; /* Reduced padding */
+    margin: 5px auto; /* Further reduced top/bottom margin */
+    padding: 10px; /* Further reduced padding */
 }
 
 .scene-main-content {
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Reduced gap */
+    gap: 15px; /* Further reduced gap */
 }
 
 #current-scene-description-display {
-    font-size: 1em; /* Slightly smaller */
-    color: #c0c0c0; 
-    margin-top: 0px; /* Reduced margin */
-    margin-bottom: 15px; /* Reduced margin */
+    font-size: 0.95em; /* Slightly smaller */
+    color: var(--khaki); 
+    margin-top: 0px; 
+    margin-bottom: 10px; /* Reduced margin */
     font-style: italic;
     min-height: 1.2em; 
     text-align: center; 
-    padding: 8px; /* Reduced padding */
-    background-color: rgba(30, 30, 40, 0.5); 
-    border: 1px solid #4a4166;
-    border-radius: 4px;
+    padding: 6px; /* Reduced padding */
+    background-color: rgba(24, 11, 29, 0.6); /* --dark-purple with alpha */
+    border: 1px solid var(--bistre);
+    border-radius: 3px;
 }
 
 .loading-npcs-message {
     text-align: center;
-    font-size: 1.1em; /* Slightly smaller */
-    padding: 20px; /* Reduced padding */
-    color: #a0a0a0;
+    font-size: 1em; /* Smaller */
+    padding: 15px; 
+    color: var(--khaki);
 }
 
 /* Grid for NPC Interaction Areas */
 .npc-interaction-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); /* Slightly smaller min-width */
-    gap: 15px; /* Reduced gap */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Slightly smaller min-width */
+    gap: 15px; 
     width: 100%;
 }
 
-/* Individual NPC Dialogue Container - The main "Chat Box" frame */
+/* Individual NPC Dialogue Container - The main "Chat Box" frame - FFT Style */
 .npc-dialogue-container {
-    background-color: #2c3e50; 
-    border: 2px solid #7c90a0; /* Slightly thinner border */
-    border-top-color: #a8c0d8; 
-    border-left-color: #a8c0d8; 
-    border-bottom-color: #4c6070; 
-    border-right-color: #4c6070; 
-    padding: 0; 
-    border-radius: 4px; /* Slightly smaller radius */
-    box-shadow: 1px 1px 4px rgba(0,0,0,0.3); /* Reduced shadow */
+    background-color: var(--dark-purple); 
+    border: 2px solid var(--bistre); 
+    border-top-color: #4a3f31; /* Slightly lighter bistre for top/left bevel */
+    border-left-color: #4a3f31;
+    border-bottom-color: var(--black); /* Darker for bottom/right bevel */
+    border-right-color: var(--black);
+    padding: 4px; /* Minimal padding */
+    border-radius: 3px; 
+    box-shadow: 1px 2px 4px rgba(0,0,0,0.5); /* Sharper shadow */
     display: flex;
     flex-direction: column; 
-    min-height: 320px; /* Reduced min-height */
+    min-height: 300px; /* Further reduced min-height */
 }
 
-/* Header within each NPC's chat box */
+/* Header within each NPC's chat box - FFT Style Nameplate */
 .npc-header {
     display: flex;
     align-items: center;
-    padding: 6px 10px; /* Reduced padding */
-    background-color: #34495e; 
-    border-bottom: 1px solid #7c90a0; /* Thinner separator */
-    border-top-left-radius: 2px; 
-    border-top-right-radius: 2px;
+    padding: 3px 6px; /* More compact padding */
+    background-color: var(--bistre); 
+    border-bottom: 1px solid var(--black); 
+    margin-bottom: 6px; 
 }
 
 .npc-header-portrait {
-    width: 36px; /* Slightly smaller portrait */
-    height: 36px;
+    width: 28px; /* Even smaller portrait */
+    height: 28px;
     border-radius: 2px; 
     object-fit: cover;
-    border: 1px solid #a8c0d8; 
-    margin-right: 8px; /* Reduced margin */
+    border: 1px solid var(--khaki); 
+    margin-right: 6px; 
     flex-shrink: 0; 
-    background-color: #2c3e50; 
+    background-color: var(--dark-purple); 
 }
 
 .npc-header-name {
     font-family: 'Press Start 2P', cursive; 
-    font-size: 0.9em; /* Slightly smaller name */
-    color: #f1c40f; 
-    text-shadow: 1px 1px #2c3e50; 
+    font-size: 0.8em; /* More compact name size */
+    color: var(--khaki); 
+    text-shadow: 1px 1px var(--black); 
 }
 
-/* Individual Chat Log for each NPC */
+/* Individual Chat Log for each NPC - FFT Style Text Area */
 .npc-chat-log { 
     flex-grow: 1; 
-    min-height: 150px; /* Reduced min-height */
-    max-height: 280px; /* Reduced max-height */
+    min-height: 140px; /* Reduced */
+    max-height: 250px; /* Reduced */
     overflow-y: auto; 
-    padding: 10px; /* Reduced padding */
-    background-color: #e4e0d8; 
-    color: #2c3e50; 
-    font-family: 'Noto Sans JP', 'VT323', sans-serif; 
-    font-size: 16px; /* Slightly smaller font for dialogue */
-    line-height: 1.45; /* Adjusted line height */
-    border-bottom: 1px solid #7c90a0; /* Thinner separator */
+    padding: 6px 8px; 
+    background-color: var(--khaki); /* Parchment is khaki */
+    color: var(--bistre); /* Text on parchment */
+    font-family: 'VT323', monospace; 
+    font-size: 16px; /* Slightly smaller */
+    line-height: 1.4; 
+    border: 1px solid var(--bistre); 
+    border-radius: 2px;
+    margin: 0 2px 6px 2px; 
 }
 .npc-chat-log .log-placeholder { 
-    color: #666055; 
+    color: #615b4d; /* Darker khaki for placeholder */
     font-style: italic;
     text-align: center;
-    padding: 10px; /* Reduced padding */
-    font-size: 0.9em;
+    padding: 8px; 
+    font-size: 0.85em;
 }
 
-/* Chat Entries and Bubbles */
+/* Chat Entries and Bubbles - FFT Style (mostly no bubbles for NPC) */
 .chat-entry {
-    margin-bottom: 8px; /* Reduced space */
+    margin-bottom: 5px; /* Tighter spacing */
     display: flex; 
 }
 
@@ -119,48 +132,40 @@
     background-color: transparent; 
     border: none;
     padding: 0; 
-    color: #2c3e50; 
+    color: inherit; 
 }
-.chat-entry.npc .chat-bubble .dialogue-text::before {
-    content: "“"; 
-    margin-right: 1px; /* Adjusted margin */
-    font-weight: bold;
-}
-.chat-entry.npc .chat-bubble .dialogue-text::after {
-    content: "”";
-    margin-left: 1px; /* Adjusted margin */
-    font-weight: bold;
-}
+.chat-entry.npc .chat-bubble .dialogue-text::before { content: ""; margin-right: 0; }
+.chat-entry.npc .chat-bubble .dialogue-text::after { content: ""; margin-left: 0; }
 
 .chat-entry.gm .chat-bubble, 
 .chat-entry.system .chat-bubble,
 .chat-entry.system-info .chat-bubble,
 .chat-entry.system-error .chat-bubble,
 .chat-entry.system-success .chat-bubble { 
-    background-color: #d0c8bc; 
-    border: 1px solid #b0a89c; 
-    padding: 5px 8px; /* Reduced padding */
-    border-radius: 3px; /* Smaller radius */
-    color: #333; 
-    font-size: 0.85em; /* Slightly smaller */
+    background-color: rgba(50, 40, 30, 0.2); /* Semi-transparent bistre on khaki */
+    border: 1px solid var(--bistre); 
+    padding: 3px 6px; 
+    border-radius: 2px; 
+    color: #493f30; /* Darker bistre for system text */
+    font-size: 0.75em; 
 }
 .chat-entry.system .chat-bubble { 
     font-style: italic;
     text-align: center;
 }
 .chat-entry.system-error .chat-bubble {
-    color: #a94442; 
-    background-color: #f2dede;
-    border-color: #ebccd1;
+    color: var(--seal-brown); 
+    background-color: rgba(106, 39, 9, 0.15);
+    border-color: var(--seal-brown);
 }
 .chat-entry.system-success .chat-bubble {
-    color: #3c763d; 
-    background-color: #dff0d8;
-    border-color: #d6e9c6;
+    color: #3c763d; /* Keeping green for success for now, can adjust */
+    background-color: rgba(60,118,61, 0.15);
+    border-color: #3c763d;
 }
 .chat-entry.npc-thinking .chat-bubble { 
     font-style: italic;
-    color: #555045; 
+    color: #7a725f; /* Muted khaki */
     background-color: transparent;
     border: none;
     padding: 0;
@@ -168,9 +173,9 @@
 
 .chat-bubble .speaker-name { 
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.8em; /* Slightly smaller */
-    color: #4a4166; 
-    margin-bottom: 2px; /* Reduced margin */
+    font-size: 0.7em; 
+    color: var(--seal-brown); 
+    margin-bottom: 1px; 
     display: block;
 }
 .chat-bubble .dialogue-text {
@@ -179,94 +184,108 @@
 
 /* Dialogue Options (if displayed) */
 .dialogue-options-container {
-    margin-top: 8px; /* Reduced margin */
-    padding: 8px; /* Reduced padding */
-    background-color: rgba(44, 62, 80, 0.1); 
-    border-top: 1px dashed #7c90a0;
+    margin-top: 5px; 
+    padding: 5px; 
+    background-color: rgba(50, 40, 30, 0.05); /* Very subtle bistre on khaki */
+    border-top: 1px dashed var(--bistre);
 }
 .dialogue-options-title {
     font-family: 'Press Start 2P', cursive;
-    font-size: 0.75em; /* Smaller title */
-    color: #34495e; 
-    margin-bottom: 6px; /* Reduced margin */
+    font-size: 0.65em; 
+    color: var(--seal-brown); 
+    margin-bottom: 4px; 
     text-align: center;
 }
 .dialogue-option.jrpg-button-small { 
-    background-color: #7f8c8d; 
-    color: #ecf0f1;
-    border-color: #95a5a6;
+    background-color: var(--bistre); 
+    color: var(--khaki);
+    border-color: #4a3f31; /* Darker bistre */
     display: block; 
     width: 100%;
-    margin-bottom: 4px; /* Reduced margin */
-    padding: 5px 8px; /* Reduced padding */
-    font-size: 0.9em; /* Ensure consistency with other small buttons */
+    margin-bottom: 3px; 
+    padding: 3px 5px; 
+    font-size: 0.8em; 
 }
 .dialogue-option.jrpg-button-small:hover {
-    background-color: #95a5a6;
-    color: #2c3e50;
+    background-color: #4a3f31;
+    color: #FFFFFF;
 }
 
 /* Controls below each NPC's chat log */
 .npc-dialogue-controls {
-    padding: 10px; /* Reduced padding */
-    background-color: #34495e; 
+    padding: 6px; 
+    background-color: var(--bistre); 
     border-bottom-left-radius: 2px; 
     border-bottom-right-radius: 2px;
+    border-top: 1px solid var(--black); 
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Smaller min button width */
-    gap: 6px; /* Reduced gap */
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); 
+    gap: 4px; 
 }
 .npc-dialogue-controls .jrpg-button-small {
-    background-color: #7f8c8d; 
-    color: #ecf0f1;
-    border: 1px solid #95a5a6;
-    font-size: 0.85em; /* Slightly smaller */
-    padding: 5px 6px; /* Reduced padding */
+    background-color: var(--seal-brown); 
+    color: var(--khaki);
+    border: 1px solid #8c4b27; /* Lighter seal brown for border */
+    font-size: 0.75em; 
+    padding: 3px 4px; 
 }
 .npc-dialogue-controls .jrpg-button-small:hover:not(:disabled) {
-    background-color: #95a5a6;
-    color: #2c3e50;
+    background-color: #8c4b27;
+    color: #FFFFFF;
 }
 
 /* Scene Input Area */
 .scene-input-area {
-    background-color: #2c3e50; 
-    border: 2px solid #7c90a0; 
-    margin-top: 15px; /* Reduced margin */
-    padding: 15px; /* Reduced padding */
+    background-color: var(--dark-purple); 
+    border: 2px solid var(--bistre); 
+    border-top-color: #4a3f31;
+    border-left-color: #4a3f31;
+    border-bottom-color: var(--black);
+    border-right-color: var(--black);
+    margin-top: 10px; 
+    padding: 10px; 
+    border-radius: 3px;
 }
 .scene-input-area h2 { 
     font-family: 'Press Start 2P', cursive;
-    color: #f1c40f; 
-    font-size: 1.2em; /* Slightly smaller */
-    margin-bottom: 10px; /* Reduced margin */
+    color: var(--khaki); 
+    font-size: 1em; 
+    margin-bottom: 8px; 
     text-align: center;
 }
 .jrpg-textarea { 
-    background-color: #e4e0d8; 
-    color: #2c3e50; 
-    border: 2px solid #7c90a0; 
-    font-family: 'Noto Sans JP', 'VT323', sans-serif; 
-    font-size: 1em; /* Slightly smaller */
-    min-height: 70px; /* Reduced min-height */
-    padding: 8px; /* Reduced padding */
+    background-color: var(--khaki); 
+    color: var(--bistre); 
+    border: 1px solid var(--bistre); 
+    font-family: 'VT323', monospace; 
+    font-size: 0.95em; 
+    min-height: 50px; 
+    padding: 6px; 
+    border-radius: 2px;
 }
 .jrpg-textarea:focus {
-    border-color: #f1c40f; 
-    box-shadow: 0 0 6px rgba(241, 196, 15, 0.5); /* Reduced shadow */
+    border-color: var(--seal-brown); 
+    box-shadow: 0 0 4px rgba(106, 39, 9, 0.5); 
 }
 #start-scene-button { 
     display: block;
-    margin: 15px auto 0 auto; /* Reduced top margin */
-    padding: 10px 20px; /* Slightly smaller button */
-    font-size: 0.95em; /* Slightly smaller font */
-    background-color: #e74c3c; 
-    color: #ffffff;
-    border-color: #c0392b;
+    margin: 8px auto 0 auto; 
+    padding: 6px 15px; 
+    font-size: 0.85em; 
+    background-color: var(--seal-brown); 
+    color: var(--khaki);
+    border: 2px outset #8c4b27;
+    border-bottom-color: #4a1c05;
+    border-right-color: #4a1c05;
 }
 #start-scene-button:hover:not(:disabled) {
-    background-color: #c0392b;
+    background-color: #8c4b27;
+    border-color: #a25b30;
 }
+#start-scene-button:active:not(:disabled) {
+    border-style: inset;
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -274,13 +293,28 @@
         grid-template-columns: 1fr; 
     }
     .npc-dialogue-controls {
-        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); 
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); 
     }
     .npc-dialogue-container {
-        min-height: 300px; /* Further reduce min-height on small screens */
+        min-height: 260px; 
     }
     .npc-chat-log {
-        min-height: 120px;
-        max-height: 250px;
+        min-height: 90px;
+        max-height: 180px;
+        font-size: 15px;
+    }
+    .npc-header-name {
+        font-size: 0.75em;
+    }
+    .npc-dialogue-controls .jrpg-button-small {
+        font-size: 0.7em; /* Even smaller for very small screens */
+        padding: 2px 3px;
+    }
+    #start-scene-button {
+        font-size: 0.8em;
+        padding: 6px 12px;
+    }
+    .scene-input-area h2 {
+        font-size: 0.9em;
     }
 }
