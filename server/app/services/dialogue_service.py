@@ -91,7 +91,7 @@ class DialogueService:
         
         current_app.logger.info(f"Attempting to generate dialogue for {npc_name}. Prompt (first 300 chars): {full_prompt[:300]}...")
         # For detailed debugging, uncomment the next line to see the full prompt in your Flask logs:
-        # current_app.logger.debug(f"Full prompt for {npc_name}:\n{full_prompt}")
+        current_app.logger.debug(f"Full prompt for {npc_name}:\n{full_prompt}")
 
         try:
             # Safety settings: Adjust as needed. BLOCK_NONE can lead to undesirable content.
