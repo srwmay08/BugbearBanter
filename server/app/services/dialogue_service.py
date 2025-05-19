@@ -130,7 +130,7 @@ class DialogueService:
         
         prompt_lines.append(f"\n=== Your Task: {npc_name}'s Cinematic Dialogue Line ===")
         prompt_lines.append(f"Based on your detailed profile ({npc_name}) and the current scene, deliver your next spoken line(s). Aim for dialogue that is memorable, reveals character, and feels like it belongs in a compelling story or movie. Avoid generic acknowledgments. Instead, react specifically, ask a pertinent question, make a charged statement, or subtly hint at your thoughts/intentions through your words. How would YOU, {npc_name}, truly respond in this moment to \"{scene_description}\"?")
-        prompt_lines.append("Provide ONLY the dialogue spoken by {npc_name}. If the dialogue is short, that's fine, but make it count. If a slightly longer, more impactful statement (1-3 sentences) is appropriate for your character and the situation, deliver that.")
+        prompt_lines.append("Provide ONLY the dialogue spoken by {npc_name}. A slightly longer, more impactful statement (1-3 sentences) is appropriate for your character and the situation, deliver that.")
         prompt_lines.append("DIALOGUE RESPONSE:") # Clear marker for AI output
 
         full_prompt = "\n".join(prompt_lines)
