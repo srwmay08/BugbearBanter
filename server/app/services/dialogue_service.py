@@ -1,57 +1,45 @@
 # server/app/services/dialogue_service.py
-import google.generativeai as genai # type: ignore # Assuming you've installed the google-generativeai package
-from flask import current_app # To access app.config for API keys and logger
+import google.generativeai as genai # type: ignore
+from flask import current_app 
 
 class DialogueService:
-    """
-    Service class for handling dialogue generation with AI APIs.
-    """
     def __init__(self):
-        # API keys should be loaded from app.config, set via environment variables
-        # Ensure your config.py loads GOOGLE_API_KEY or GEMINI_API_KEY
+        current_app.logger.error("--- DEBUG: DialogueService __init__ CALLED ---") # New Log
         self.gemini_api_key = current_app.config.get('GEMINI_API_KEY') or current_app.config.get('GOOGLE_API_KEY')
         
         if not self.gemini_api_key:
-            current_app.logger.warning("Gemini API key (GEMINI_API_KEY or GOOGLE_API_KEY) is not configured in app.config. Dialogue generation will fail.")
+            current_app.logger.error("--- DEBUG: DialogueService __init__ - Gemini API key NOT FOUND. ---") # Changed to error
             self.model = None
-            return # Stop initialization if no key
+            return
 
         try:
-            # Ensure genai is configured. This should ideally be done once at app startup.
-            # If genai.configure() was called in config.py or app init, this might not be needed here.
-            # However, checking and configuring if not already done can be a safeguard.
-            if not genai. अभी._is_configured: # A way to check if already configured (Note: internal API, might change)
-                 genai.configure(api_key=self.gemini_api_key)
-            
-            self.model = genai.GenerativeModel(
-                current_app.config.get('GEMINI_MODEL_NAME', 'gemini-1.5-flash-latest') # Or your preferred model like 'gemini-pro'
-            )
-            current_app.logger.info(f"GenerativeModel '{current_app.config.get('GEMINI_MODEL_NAME', 'gemini-1.5-flash-latest')}' initialized successfully.")
+            # Attempt to configure genai if not already done.
+            # Note: genai. अभी._is_configured is an internal check and might change.
+            # A more robust way is to ensure configure() is called once at app startup.
+            if not hasattr(genai, '_is_configured_custom_flag'): # Using a custom flag to avoid re-configuring if not needed
+                genai.configure(api_key=self.gemini_api_key)
+                genai._is_configured_custom_flag = True # Set our custom flag
+                current_app.logger.info("--- DEBUG: DialogueService __init__ - genai.configure called. ---")
+            else:
+                current_app.logger.info("--- DEBUG: DialogueService __init__ - genai already configured. ---")
+
+            model_name = current_app.config.get('GEMINI_MODEL_NAME', 'gemini-1.5-flash-latest')
+            self.model = genai.GenerativeModel(model_name)
+            current_app.logger.error(f"--- DEBUG: DialogueService __init__ - GenerativeModel '{model_name}' INITIALIZED. ---") # Changed to error
         except Exception as e:
-            current_app.logger.error(f"Failed to initialize GenerativeModel or configure genai: {e}")
+            current_app.logger.error(f"--- DEBUG: DialogueService __init__ - FAILED to initialize GenerativeModel: {e} ---") # Changed to error
             self.model = None
 
-
     def generate_dialogue_for_npc_in_scene(self, npc_profile, scene_description, conversation_history):
-        """
-        Generates a single line of dialogue for an NPC based on their profile,
-        the scene description, and recent conversation history.
+        current_app.logger.error("--- DEBUG: DialogueService generate_dialogue_for_npc_in_scene CALLED ---") # New Log
 
-        Args:
-            npc_profile (dict): Contains details like name, personality, backstory, race, class, etc.
-            scene_description (str): The GM's description of the current scene.
-            conversation_history (list): A list of recent dialogue turns, e.g.,
-                                         [{"speaker": "NPC_NAME", "text": "..."}, {"speaker": "GM", "text": "..."}]
-
-        Returns:
-            str: The generated dialogue text, or a placeholder/error message if an error occurs.
-        """
         if not self.model:
-            current_app.logger.error("Gemini model not initialized. Cannot generate dialogue.")
+            current_app.logger.error("--- DEBUG: generate_dialogue_for_npc_in_scene - Gemini model not initialized. ---")
             return "[Error: AI Model Not Initialized. Check API Key and Configuration.]"
-        # No need to check self.gemini_api_key again if model initialization relied on it.
 
         npc_name = npc_profile.get('name', 'The NPC')
+        current_app.logger.info(f"--- DEBUG: Generating dialogue for: {npc_name} ---")
+
 
         # --- Construct a detailed prompt for the AI ---
         prompt_lines = []
@@ -60,14 +48,13 @@ class DialogueService:
         prompt_lines.append(f"\n--- Your Character Profile: {npc_name} ---")
         if npc_profile.get('race'):
             prompt_lines.append(f"Race: {npc_profile['race']}")
-        if npc_profile.get('class'): # 'class' is a common field name
+        if npc_profile.get('class'): 
             prompt_lines.append(f"Class/Role: {npc_profile['class']}")
         if npc_profile.get('appearance'):
             prompt_lines.append(f"Appearance: {npc_profile['appearance']}")
         if npc_profile.get('personality_traits'):
             prompt_lines.append(f"Key Personality Traits: {', '.join(npc_profile['personality_traits'])}. You MUST embody these traits in your response.")
         if npc_profile.get('backstory'):
-            # Limit backstory length to keep prompt focused
             prompt_lines.append(f"Relevant Backstory Snippet: {npc_profile['backstory'][:300]}...") 
         if npc_profile.get('motivations'):
             prompt_lines.append(f"Primary Motivations: {npc_profile['motivations']}. Let these motivations strongly guide what you say.")
@@ -79,7 +66,6 @@ class DialogueService:
 
         if conversation_history:
             prompt_lines.append("\n--- Recent Conversation (Your lines are from your perspective as {npc_name}) ---")
-            # Show last 3-4 exchanges to provide immediate context
             for entry in conversation_history[-4:]: 
                 prompt_lines.append(f"{entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
         
@@ -89,25 +75,20 @@ class DialogueService:
 
         full_prompt = "\n".join(prompt_lines)
         
-        current_app.logger.info(f"Attempting to generate dialogue for {npc_name}. Prompt (first 300 chars): {full_prompt[:300]}...")
-        # For detailed debugging, uncomment the next line to see the full prompt in your Flask logs:
-        current_app.logger.debug(f"Full prompt for {npc_name}:\n{full_prompt}")
+        # This is the crucial debug line you uncommented. Make sure it's hit.
+        current_app.logger.error(f"--- DEBUG: Full prompt for {npc_name} (first 300 chars): {full_prompt[:300]} ---") # Changed to error
+        current_app.logger.debug(f"Full prompt for {npc_name}:\n{full_prompt}") # This is the one you originally uncommented
 
         try:
-            # Safety settings: Adjust as needed. BLOCK_NONE can lead to undesirable content.
-            # Start with more restrictive settings and loosen if necessary and appropriate.
             safety_settings = [
                 {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
                 {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
                 {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
                 {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
             ]
-            
             generation_config = genai.types.GenerationConfig(
-                temperature=0.75, # 0.0 (deterministic) to 1.0 (more creative). 0.7-0.8 is often good.
-                # top_p=0.95, # Nucleus sampling
-                # top_k=40,   # Top-k sampling
-                max_output_tokens=150 # Max length of the generated dialogue line
+                temperature=0.75, 
+                max_output_tokens=150 
             )
 
             response = self.model.generate_content(
@@ -116,27 +97,21 @@ class DialogueService:
                 safety_settings=safety_settings
             )
             
-            current_app.logger.debug(f"Gemini Raw Response for {npc_name}: {response}")
-
             if response.parts:
                 generated_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
                 
-                # Clean up common AI artifacts
                 if generated_text.lower().startswith(f"{npc_name.lower()}:"):
                     generated_text = generated_text[len(npc_name)+1:].strip()
-                
                 common_ai_prefixes = ["dialogue:", "response:", f"{npc_name} says:"]
                 for prefix in common_ai_prefixes:
-                    if generated_text.lower().startswith(prefix.lower()): # Case-insensitive prefix check
+                    if generated_text.lower().startswith(prefix.lower()):
                         generated_text = generated_text[len(prefix):].strip()
-
-                # Remove surrounding quotes if the AI consistently adds them and they are not part of the dialogue
                 if len(generated_text) > 1 and ((generated_text.startswith('"') and generated_text.endswith('"')) or \
                    (generated_text.startswith("'") and generated_text.endswith("'"))):
                     generated_text = generated_text[1:-1]
                 
                 current_app.logger.info(f"Successfully generated dialogue for {npc_name}: \"{generated_text}\"")
-                return generated_text if generated_text else f"[{npc_name} remains silent, observing.]" # Fallback for empty string
+                return generated_text if generated_text else f"[{npc_name} remains silent, observing.]"
             else:
                 block_reason_msg = "Response contained no usable parts."
                 if response.prompt_feedback and response.prompt_feedback.block_reason:
@@ -149,8 +124,3 @@ class DialogueService:
         except Exception as e:
             current_app.logger.error(f"Exception during Gemini API call for {npc_name}: {e}")
             return f"[Error: AI service encountered an issue while generating a line for {npc_name}.]"
-
-    # If you have an ElevenLabs voice generation service, it would remain here.
-    # def generate_voice_elevenlabs(self, text_to_speak, voice_id="21m00Tcm4TlvDq8ikWAM"):
-    #     # ... (implementation as before) ...
-    #     pass
