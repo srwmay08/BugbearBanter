@@ -1,13 +1,11 @@
 # app/services/auth_service.py
 from flask import current_app
-from flask_bcrypt import Bcrypt # Or use direct bcrypt
+# from flask_bcrypt import Bcrypt # Using direct bcrypt as per previous setup
+import bcrypt # ENSURE THIS IMPORT IS PRESENT
 from ..utils.db import mongo
 from ..models import User # Assuming your User model is defined
 import uuid
 from datetime import datetime
-
-# Initialize bcrypt here if you use Flask-Bcrypt
-# bcrypt = Bcrypt() # Can be initialized in create_app and passed around or used as current_app.extensions['bcrypt']
 
 def register_user_s(email, password):
     users_collection = mongo.db.users
@@ -16,52 +14,47 @@ def register_user_s(email, password):
         return None, "User with this email already exists"
 
     # Using direct bcrypt
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()) # This line should now work
 
     new_user_data = {
-        "_id": str(uuid.uuid4()), # Or use MongoDB's ObjectId
+        "_id": str(uuid.uuid4()), 
         "email": email,
         "password_hash": hashed_password.decode('utf-8'),
         "created_at": datetime.utcnow(),
         "google_id": None,
-        "npc_ids": [] # To store IDs of NPCs uploaded by this user
+        "name": None, # You might want to add a name field to your registration form
+        "picture": None,
+        "npc_ids": [] 
     }
     result = users_collection.insert_one(new_user_data)
-    # Fetch the created user to return (optional, depends on your needs)
     created_user = users_collection.find_one({"_id": new_user_data["_id"]})
     if created_user:
-        del created_user["password_hash"] # Don't send hash back
+        del created_user["password_hash"] 
     return created_user, None
 
 def login_user_s(email, password):
     users_collection = mongo.db.users
     user_data = users_collection.find_one({"email": email})
-    if not user_data:
+    if not user_data or not user_data.get('password_hash'): # Check if password_hash exists
         return None, "Invalid email or password"
 
     if bcrypt.checkpw(password.encode('utf-8'), user_data['password_hash'].encode('utf-8')):
-        # Password matches
-        # In a real app, you'd generate a session token (JWT) or use Flask-Login here
-        user_obj = User(email=user_data['email'], password_hash=user_data['password_hash'], google_id=user_data.get('google_id'))
-        # For now, just return the user data (excluding password hash)
         user_data_safe = {k: v for k, v in user_data.items() if k != "password_hash"}
         return user_data_safe, None
     else:
         return None, "Invalid email or password"
 
-# Placeholder for Google Sign-In user creation/retrieval
 def get_or_create_google_user(user_info):
     users_collection = mongo.db.users
-    user_data = users_collection.find_one({"google_id": user_info.get("sub")}) # "sub" is Google's user ID
+    user_data = users_collection.find_one({"google_id": user_info.get("sub")}) 
     if user_data:
         user_data_safe = {k: v for k, v in user_data.items() if k != "password_hash"}
-        return user_data_safe, None # Existing user
+        return user_data_safe, None
 
-    # Create new user for Google Sign-In
     new_user_data = {
         "_id": str(uuid.uuid4()),
         "email": user_info.get("email"),
-        "password_hash": None, # No password for Google-only users
+        "password_hash": None, 
         "google_id": user_info.get("sub"),
         "name": user_info.get("name"),
         "picture": user_info.get("picture"),
@@ -69,4 +62,6 @@ def get_or_create_google_user(user_info):
         "npc_ids": []
     }
     users_collection.insert_one(new_user_data)
+    # Return a safe version without the (non-existent) password hash
+    del new_user_data["password_hash"] 
     return new_user_data, None
