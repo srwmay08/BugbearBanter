@@ -17,10 +17,10 @@ class DialogueService:
 
         try:
             current_app.logger.info("--- INFO DEBUG: DialogueService __init__ - Attempting to configure genai and initialize model... ---")
-            if not hasattr(genai, '_is_configured_globally_by_bugbear_v4'): 
+            if not hasattr(genai, '_is_configured_globally_by_bugbear_v5'): # Changed flag version
                 current_app.logger.info("--- INFO DEBUG: Attempting to call genai.configure()... ---")
                 genai.configure(api_key=self.gemini_api_key)
-                genai._is_configured_globally_by_bugbear_v4 = True 
+                genai._is_configured_globally_by_bugbear_v5 = True 
                 current_app.logger.critical("--- CRITICAL DEBUG: DialogueService __init__ - genai.configure() CALLED SUCCESSFULLY. ---")
             else:
                 current_app.logger.info("--- INFO DEBUG: genai already configured globally by Bugbear. ---")
@@ -42,13 +42,13 @@ class DialogueService:
             if recent_events:
                 knowledge_parts.append("Some Recent World Events of Note:")
                 for event in recent_events:
-                    knowledge_parts.append(f"- {event.get('name')}: {event.get('description', '')[:120]}... (Impact: {event.get('impact', '')[:80]}...) Status: {event.get('status', 'Unknown')}.")
+                    knowledge_parts.append(f"- {event.get('name', 'Unnamed Event')}: {event.get('description', '')[:120]}... (Impact: {event.get('impact', '')[:80]}...) Status: {event.get('status', 'Unknown')}.")
             
             prominent_locations = list(mongo.db.world_locations.find().limit(2))
             if prominent_locations:
                 knowledge_parts.append("\nKey Locations in the World:")
                 for loc in prominent_locations:
-                    knowledge_parts.append(f"- {loc.get('name')} ({loc.get('type')}): {loc.get('description', '')[:120]}... Current Mood: {loc.get('current_mood', 'Normal')}.")
+                    knowledge_parts.append(f"- {loc.get('name', 'Unnamed Location')} ({loc.get('type', 'N/A')}): {loc.get('description', '')[:120]}... Current Mood: {loc.get('current_mood', 'Normal')}.")
 
             prominent_religions = list(mongo.db.world_religions.find().limit(2))
             if prominent_religions:
@@ -56,30 +56,47 @@ class DialogueService:
                 for religion in prominent_religions:
                     domains = religion.get('domains', [])
                     domains_str = ', '.join(domains) if isinstance(domains, list) else str(domains)
-                    knowledge_parts.append(f"- {religion.get('name')}: Known for {domains_str}. Common saying: \"{religion.get('common_saying','')}\" General Influence: {religion.get('general_influence', '')[:100]}...")
-
+                    knowledge_parts.append(f"- {religion.get('name', 'Unnamed Religion')}: Known for {domains_str}. Common saying: \"{religion.get('common_saying','')}\" General Influence: {religion.get('general_influence', '')[:100]}...")
         except Exception as e:
-            current_app.logger.error(f"Error fetching world knowledge from DB: {e}")
+            current_app.logger.error(f"Error fetching world knowledge from DB: {e}", exc_info=True)
             knowledge_parts.append("Error retrieving some world knowledge details.")
         
         return "\n".join(knowledge_parts) if knowledge_parts else "General world knowledge is currently undefined or sparse."
+
+    def _format_traits_for_prompt(self, traits_value, npc_name, context_for_log=""):
+        """Helper to consistently format and log personality traits."""
+        current_app.logger.info(f"--- DEBUG TRAITS ({context_for_log}): Raw 'personality_traits' for {npc_name}: '{traits_value}' (Type: {type(traits_value)}) ---")
+        if traits_value and isinstance(traits_value, str):
+            current_app.logger.info(f"--- DEBUG TRAITS ({context_for_log}): Using traits as STRING for {npc_name}: '{traits_value}' ---")
+            return traits_value
+        elif traits_value and isinstance(traits_value, list):
+            # This case should ideally not happen if DB stores strings correctly.
+            # If it's a list of single characters, joining them without a separator might be intended.
+            # If it's a list of trait strings, joining with ", " is correct.
+            # For now, assume it's a list of actual trait strings if it's a list.
+            joined_traits = ", ".join(str(t) for t in traits_value) # Ensure all elements are strings before joining
+            current_app.logger.warning(f"--- DEBUG TRAITS ({context_for_log}): 'personality_traits' for {npc_name} was a LIST. Joined to: '{joined_traits}' ---")
+            return joined_traits
+        else:
+            current_app.logger.info(f"--- DEBUG TRAITS ({context_for_log}): 'personality_traits' for {npc_name} is None or not string/list. Using default. ---")
+            return "Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context)."
 
 
     def generate_dialogue_for_npc_in_scene(self, npc_profile, scene_description, conversation_history):
         current_app.logger.critical("--- CRITICAL DEBUG: DialogueService generate_dialogue_for_npc_in_scene CALLED ---")
 
         if not self.model:
-            current_app.logger.critical("--- CRITICAL DEBUG: generate_dialogue_for_npc_in_scene - Gemini model is None. Cannot generate. ---")
-            return "[Error: AI Model Not Initialized. Check server logs for API key/configuration issues.]"
+            current_app.logger.critical("--- CRITICAL DEBUG: generate_dialogue_for_npc_in_scene - Gemini model is None. ---")
+            return "[Error: AI Model Not Initialized]"
 
         npc_name = npc_profile.get('name', 'The NPC')
         current_app.logger.info(f"--- INFO DEBUG: Generating dialogue for: {npc_name} ---")
-
         world_knowledge_summary = self._get_world_knowledge_summary()
 
-        prompt_lines = []
-        prompt_lines.append(f"You are an AI masterfully roleplaying as {npc_name}, a character in a rich fantasy world. Your goal is to deliver compelling, cinematic dialogue that reveals your character's depth, advances the narrative, and engages the Game Master (GM).")
-        prompt_lines.append("The GM will describe a scene or pose a question. Your response MUST be a single, impactful, in-character line or two of spoken dialogue from {npc_name}'s perspective. Do NOT narrate actions, describe thoughts out of character, or break character. Focus purely on what {npc_name} says aloud.")
+        prompt_lines = [
+            f"You are an AI masterfully roleplaying as {npc_name}, a character in a rich fantasy world. Your goal is to deliver compelling, cinematic dialogue that reveals your character's depth, advances the narrative, and engages the Game Master (GM).",
+            "The GM will describe a scene or pose a question. Your response MUST be a single, impactful, in-character line or two of spoken dialogue from {npc_name}'s perspective. Do NOT narrate actions, describe thoughts out of character, or break character. Focus purely on what {npc_name} says aloud."
+        ]
         
         prompt_lines.append(f"\n=== {npc_name}'s In-Depth Character Profile ===")
         prompt_lines.append(f"Name: {npc_name}")
@@ -87,42 +104,17 @@ class DialogueService:
         prompt_lines.append(f"Class/Role: {npc_profile.get('class', 'Unknown')}") 
         prompt_lines.append(f"Appearance: {npc_profile.get('appearance', 'Not clearly described.')}")
         
-        # --- ENHANCED LOGGING FOR PERSONALITY TRAITS ---
-        traits_from_profile = npc_profile.get('personality_traits')
-        current_app.logger.info(f"--- DEBUG TRAITS: Raw 'personality_traits' from npc_profile for {npc_name}: '{traits_from_profile}' (Type: {type(traits_from_profile)}) ---")
+        formatted_traits = self._format_traits_for_prompt(npc_profile.get('personality_traits'), npc_name, "generate_dialogue")
+        prompt_lines.append(f"Core Personality Traits: {formatted_traits}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
 
-        if traits_from_profile and isinstance(traits_from_profile, str):
-            prompt_lines.append(f"Core Personality Traits: {traits_from_profile}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
-            current_app.logger.info(f"--- DEBUG TRAITS: Using traits as STRING for {npc_name}: '{traits_from_profile}' ---")
-        elif traits_from_profile and isinstance(traits_from_profile, list): 
-             joined_traits = ', '.join(traits_from_profile)
-             prompt_lines.append(f"Core Personality Traits: {joined_traits}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
-             current_app.logger.warning(f"--- DEBUG TRAITS: 'personality_traits' for {npc_name} was a LIST. Joined to: '{joined_traits}' ---")
-        else:
-            prompt_lines.append("Core Personality Traits: Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context).")
-            current_app.logger.info(f"--- DEBUG TRAITS: 'personality_traits' for {npc_name} is None or not string/list. Using default. ---")
-        # --- END ENHANCED LOGGING ---
-
-        if npc_profile.get('backstory'):
-            prompt_lines.append(f"Key Backstory Elements: {npc_profile['backstory'][:400]}...") 
-        else:
-            prompt_lines.append("Key Backstory Elements: Not specified.")
-
-        if npc_profile.get('motivations'):
-            prompt_lines.append(f"Driving Motivations: {npc_profile['motivations']}. Your dialogue should reflect these underlying goals and desires, even if subtly.")
-        else:
-            prompt_lines.append("Driving Motivations: Not specified.")
-
-        if npc_profile.get('flaws'):
-            prompt_lines.append(f"Significant Flaws/Weaknesses: {npc_profile['flaws']}. These can create internal conflict or lead to characteristic reactions or mistakes in your speech.")
-        else:
-            prompt_lines.append("Significant Flaws/Weaknesses: Not specified.")
-        
+        prompt_lines.append(f"Key Backstory Elements: {npc_profile.get('backstory', 'Not specified.')[:400]}...")
+        prompt_lines.append(f"Driving Motivations: {npc_profile.get('motivations', 'Not specified.')}. Your dialogue should reflect these underlying goals and desires, even if subtly.")
+        prompt_lines.append(f"Significant Flaws/Weaknesses: {npc_profile.get('flaws', 'Not specified.')}. These can create internal conflict or lead to characteristic reactions or mistakes in your speech.")
         if npc_profile.get('speech_patterns'):
              prompt_lines.append(f"Speech Patterns/Voice: {npc_profile.get('speech_patterns')}")
 
         prompt_lines.append("\n=== General World Knowledge & Recent Events (You are aware of this as background context) ===")
-        prompt_lines.append(world_knowledge_summary if world_knowledge_summary else "The world is a vast place, full of everyday occurrences. Specific details are not immediately relevant unless the scene implies otherwise.")
+        prompt_lines.append(world_knowledge_summary)
         
         prompt_lines.append("\n=== Current Scene Context (Provided by GM) ===")
         prompt_lines.append(scene_description)
@@ -141,6 +133,7 @@ class DialogueService:
         current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---")
 
         try:
+            # ... (rest of AI call logic as before) ...
             safety_settings = self.get_default_safety_settings()
             generation_config = genai.types.GenerationConfig(temperature=0.8, top_p=0.95, max_output_tokens=200)
             response = self.model.generate_content(full_prompt, generation_config=generation_config, safety_settings=safety_settings)
@@ -170,109 +163,72 @@ class DialogueService:
             current_app.logger.exception("Full exception details during AI call:")
             return f"[Error: AI service encountered an issue for {npc_name}. Check server logs for full exception.]"
 
+
     def handle_npc_action(self, npc_id, action_type, payload, npc_profile, scene_description, conversation_history):
         current_app.logger.info(f"--- INFO DEBUG: Handling action '{action_type}' for NPC ID '{npc_id}' ---")
         npc_name = npc_profile.get('name', 'The NPC')
 
         if action_type == "submit_memory":
+            # ... (memory logic) ...
             dialogue_to_remember = payload.get("dialogue_exchange", "an important event")
             current_app.logger.info(f"NPC Action: '{npc_name}' is 'remembering': {dialogue_to_remember[:100]}...")
             return {"status": "success", "message": f"'{dialogue_to_remember[:30]}...' noted for {npc_name} (simulated)."}
 
-        elif action_type == "undo_memory":
-            current_app.logger.info(f"NPC Action: '{npc_name}' is attempting to 'undo last memory'.")
-            return {"status": "success", "message": f"Last memory item for {npc_name} (simulated) undone."}
 
-        elif action_type == "next_topic" or action_type == "regenerate_topics":
-            current_app.logger.info(f"NPC Action: '{npc_name}' - Generating new topics...")
+        elif action_type == "next_topic" or action_type == "regenerate_topics" or action_type == "show_top5_options":
+            current_app.logger.info(f"NPC Action: '{npc_name}' - Generating for action '{action_type}'...")
             world_knowledge_summary = self._get_world_knowledge_summary()
             
-            traits_for_prompt = npc_profile.get('personality_traits', 'Unknown')
-            if isinstance(traits_for_prompt, list): 
-                traits_for_prompt = ', '.join(traits_for_prompt)
-            current_app.logger.info(f"--- DEBUG TRAITS (for Topic Gen): Using traits for {npc_name}: '{traits_for_prompt}' ---")
+            formatted_traits = self._format_traits_for_prompt(npc_profile.get('personality_traits'), npc_name, action_type)
 
-
-            topic_prompt_lines = [
+            prompt_lines = [
                 f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile below) is in the following scene, with some general world context.",
-                f"NPC Profile Summary: Personality: {traits_for_prompt}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
+                f"NPC Profile Summary: Personality: {formatted_traits}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
                 f"World Context: {world_knowledge_summary[:300]}...",
                 f"Current Scene: {scene_description}",
                 f"Recent Conversation with {npc_name}:"
             ]
             for entry in conversation_history[-2:]:
-                topic_prompt_lines.append(f"  {entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
+                prompt_lines.append(f"  {entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
             
-            topic_prompt_lines.append(f"\nBased on this, suggest 3-5 distinct and engaging conversation topics, questions, or observations that this specific NPC, {npc_name}, might bring up or be interested in discussing next. Each topic should be a short phrase or question suitable for a player to click on to steer the conversation. Consider {npc_name}'s personality and the current situation.")
-            topic_prompt_lines.append("Output each topic on a new line, starting with '- '.")
-            topic_prompt = "\n".join(topic_prompt_lines)
+            if action_type == "show_top5_options":
+                prompt_lines.append(f"\nConsidering this, generate 3 to 5 distinct, in-character dialogue lines that {npc_name} could say next. Each line should offer a different approach or reaction to the current situation. Number each option.")
+                prompt_lines.append("Output ONLY the numbered dialogue lines.")
+            else: # next_topic or regenerate_topics
+                prompt_lines.append(f"\nBased on this, suggest 3-5 distinct and engaging conversation topics, questions, or observations that this specific NPC, {npc_name}, might bring up or be interested in discussing next. Each topic should be a short phrase or question suitable for a player to click on to steer the conversation. Consider {npc_name}'s personality and the current situation.")
+                prompt_lines.append("Output each topic on a new line, starting with '- '.")
             
-            current_app.logger.debug(f"--- TOPIC PROMPT for {npc_name} ---\n{topic_prompt}\n--- END TOPIC PROMPT ---")
+            action_prompt = "\n".join(prompt_lines)
+            current_app.logger.debug(f"--- ACTION PROMPT ({action_type}) for {npc_name} ---\n{action_prompt}\n--- END ACTION PROMPT ---")
 
             try:
                 if not self.model: return {"status": "error", "message": "AI model not initialized."}
-                topic_gen_config = genai.types.GenerationConfig(temperature=0.75, max_output_tokens=150)
-                safety_settings_topics = self.get_default_safety_settings()
-
-                response = self.model.generate_content(topic_prompt, generation_config=topic_gen_config, safety_settings=safety_settings_topics)
+                gen_config = genai.types.GenerationConfig(
+                    temperature=0.75 if action_type != "show_top5_options" else 0.85, 
+                    max_output_tokens=150 if action_type != "show_top5_options" else 300
+                )
+                response = self.model.generate_content(action_prompt, generation_config=gen_config, safety_settings=self.get_default_safety_settings())
                 
                 if response.parts:
-                    topics_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
-                    suggested_topics = [topic.strip().lstrip('- ').strip('"') for topic in topics_text.split('\n') if topic.strip()]
-                    current_app.logger.info(f"Generated topics for {npc_name}: {suggested_topics}")
-                    return {"status": "success", "action": action_type, "data": {"new_topics": suggested_topics, "message": f"New topics generated for {npc_name}."}}
+                    text_result = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
+                    items = [item.strip().lstrip('0123456789.- ').strip('"') for item in text_result.split('\n') if item.strip()]
+                    
+                    if action_type == "show_top5_options":
+                        current_app.logger.info(f"Generated dialogue options for {npc_name}: {items}")
+                        return {"status": "success", "action": action_type, "data": {"dialogue_options": items[:5], "message": f"Top dialogue options for {npc_name}."}}
+                    else:
+                        current_app.logger.info(f"Generated topics for {npc_name}: {items}")
+                        return {"status": "success", "action": action_type, "data": {"new_topics": items, "message": f"New topics generated for {npc_name}."}}
                 else:
-                    block_reason_msg = "Topic gen response had no parts."
+                    # ... (error handling as before) ...
+                    block_reason_msg = f"{action_type} response had no parts."
                     if hasattr(response, 'prompt_feedback') and response.prompt_feedback and response.prompt_feedback.block_reason:
                          block_reason_msg = response.prompt_feedback.block_reason_message
-                    current_app.logger.warning(f"Topic generation for {npc_name} failed: {block_reason_msg}")
-                    return {"status": "error", "message": f"Could not generate topics: {block_reason_msg}"}
+                    current_app.logger.warning(f"{action_type} generation for {npc_name} failed: {block_reason_msg}")
+                    return {"status": "error", "message": f"Could not generate {action_type}: {block_reason_msg}"}
             except Exception as e:
-                current_app.logger.error(f"Error generating topics for {npc_name}: {e}", exc_info=True)
-                return {"status": "error", "message": "Error during topic generation."}
-
-        elif action_type == "show_top5_options":
-            current_app.logger.info(f"NPC Action: '{npc_name}' - Generating top 5 dialogue options...")
-            
-            traits_for_prompt = npc_profile.get('personality_traits', 'Unknown')
-            if isinstance(traits_for_prompt, list): 
-                traits_for_prompt = ', '.join(traits_for_prompt)
-            current_app.logger.info(f"--- DEBUG TRAITS (for Top5 Options): Using traits for {npc_name}: '{traits_for_prompt}' ---")
-
-
-            options_prompt_lines = [
-                f"You are roleplaying as {npc_name}. Profile and scene context are below.",
-                f"NPC Profile Summary: Personality: {traits_for_prompt}. Motivations: {npc_profile.get('motivations', 'Unknown')}.",
-                f"Current Scene: {scene_description}",
-                f"Recent Conversation with {npc_name}:"
-            ]
-            for entry in conversation_history[-2:]:
-                options_prompt_lines.append(f"  {entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
-            options_prompt_lines.append(f"\nConsidering this, generate 3 to 5 distinct, in-character dialogue lines that {npc_name} could say next. Each line should offer a different approach or reaction to the current situation. Number each option.")
-            options_prompt_lines.append("Output ONLY the numbered dialogue lines.")
-            options_prompt = "\n".join(options_prompt_lines)
-
-            current_app.logger.debug(f"--- OPTIONS PROMPT for {npc_name} ---\n{options_prompt}\n--- END OPTIONS PROMPT ---")
-            
-            try:
-                if not self.model: return {"status": "error", "message": "AI model not initialized."}
-                options_gen_config = genai.types.GenerationConfig(temperature=0.85, max_output_tokens=300) 
-                response = self.model.generate_content(options_prompt, generation_config=options_gen_config, safety_settings=self.get_default_safety_settings())
-
-                if response.parts:
-                    options_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
-                    dialogue_options = [opt.strip().lstrip('0123456789. ').strip('"') for opt in options_text.split('\n') if opt.strip()]
-                    current_app.logger.info(f"Generated dialogue options for {npc_name}: {dialogue_options}")
-                    return {"status": "success", "action": action_type, "data": {"dialogue_options": dialogue_options[:5], "message": f"Top dialogue options for {npc_name}."}}
-                else: 
-                    block_reason_msg = "Options gen response had no parts."
-                    if hasattr(response, 'prompt_feedback') and response.prompt_feedback and response.prompt_feedback.block_reason:
-                         block_reason_msg = response.prompt_feedback.block_reason_message
-                    current_app.logger.warning(f"Options generation for {npc_name} failed: {block_reason_msg}")
-                    return {"status": "error", "message": f"Could not generate options: {block_reason_msg}"}
-            except Exception as e:
-                current_app.logger.error(f"Error generating dialogue options for {npc_name}: {e}", exc_info=True)
-                return {"status": "error", "message": "Error generating dialogue options."}
+                current_app.logger.error(f"Error during {action_type} for {npc_name}: {e}", exc_info=True)
+                return {"status": "error", "message": f"Error during {action_type} generation."}
 
         elif action_type == "show_tree":
             current_app.logger.info(f"NPC Action: '{npc_name}' - Show Conversation Tree (not implemented).")
