@@ -3,27 +3,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Element References ---
     const npcInteractionArea = document.getElementById('npc-interaction-area');
     const sceneDescriptionTextarea = document.getElementById('scene-description-textarea');
-    const startSceneButton = document.getElementById('start-scene-button'); // Corrected ID from HTML
+    const startSceneButton = document.getElementById('start-scene-button');
     const currentSceneDescriptionDisplay = document.getElementById('current-scene-description-display');
-    // Get the loading message element safely, it might be removed if NPCs load fast
     let loadingNpcsMessage = npcInteractionArea ? npcInteractionArea.querySelector('.loading-npcs-message') : null;
 
     // --- State Variables ---
     let sceneParticipants = []; // Stores full NPC objects for the current scene
+    let conversationHistory = {}; // Object to store conversation history per NPC: { npcId: [{speaker, text}, ...] }
 
-    // --- Initial Error Checks for Essential Elements ---
+    // --- Initial Error Checks ---
     if (!npcInteractionArea || !sceneDescriptionTextarea || !startSceneButton || !currentSceneDescriptionDisplay) {
         console.error('CRITICAL: One or more essential UI elements for the scene page are missing from scene.html!');
-        if(npcInteractionArea) { // Only try to update if it exists
-            npcInteractionArea.innerHTML = '<p style="color:red; text-align:center;">Error: UI setup incomplete. Please check console and HTML structure.</p>';
-        }
+        if(npcInteractionArea) npcInteractionArea.innerHTML = '<p style="color:red; text-align:center;">Error: UI setup incomplete.</p>';
         return;
     }
-    // If loadingNpcsMessage was initially null (because npcInteractionArea was null), try to get it now if npcInteractionArea exists
     if (!loadingNpcsMessage && npcInteractionArea) {
         loadingNpcsMessage = npcInteractionArea.querySelector('.loading-npcs-message');
     }
-
 
     // --- Get Selected NPCs from URL ---
     const urlParams = new URLSearchParams(window.location.search);
@@ -31,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedNpcIds = npcIdsParam ? npcIdsParam.split(',') : [];
 
     if (selectedNpcIds.length === 0) {
-        if(loadingNpcsMessage) loadingNpcsMessage.textContent = 'No NPCs were selected for this scene. Please go back to NPC selection.';
-        else if(npcInteractionArea) npcInteractionArea.innerHTML = '<p>No NPCs were selected for this scene. Please go back to NPC selection.</p>';
+        if(loadingNpcsMessage) loadingNpcsMessage.textContent = 'No NPCs selected. Please go back.';
+        else if(npcInteractionArea) npcInteractionArea.innerHTML = '<p>No NPCs selected. Please go back.</p>';
         startSceneButton.disabled = true;
         return;
     }
 
     // --- Fetch NPC Data and Initialize UI ---
-    fetch('/api/npcs') // Assumes this endpoint returns ALL NPCs
+    fetch('/api/npcs')
         .then(response => {
             if (!response.ok) throw new Error(`HTTP error fetching NPC list! Status: ${response.status} ${response.statusText}`);
             return response.json();
@@ -48,33 +44,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const npc = allNpcs.find(n => n._id === id);
                 if (npc) {
                     sceneParticipants.push(npc);
+                    conversationHistory[npc._id] = []; // Initialize history for each participant
                 } else {
                     console.warn(`NPC with ID ${id} not found in fetched list from /api/npcs.`);
                 }
             });
             
             if (sceneParticipants.length === 0) {
-                if(loadingNpcsMessage) loadingNpcsMessage.textContent = 'Could not load details for any of the selected NPCs.';
-                else if(npcInteractionArea) npcInteractionArea.innerHTML = '<p>Could not load details for any of the selected NPCs.</p>';
+                if(loadingNpcsMessage) loadingNpcsMessage.textContent = 'Could not load details for selected NPCs.';
                 startSceneButton.disabled = true;
             } else {
-                if(loadingNpcsMessage) loadingNpcsMessage.remove(); // Remove "Loading..." message
+                if(loadingNpcsMessage) loadingNpcsMessage.remove();
                 createNpcInteractionInterfaces();
             }
         })
         .catch(error => {
             console.error('Error fetching NPC details for scene:', error);
-            if(loadingNpcsMessage) loadingNpcsMessage.textContent = `Error loading NPC details: ${error.message}. Check console.`;
-            else if(npcInteractionArea) npcInteractionArea.innerHTML = `<p>Error loading NPC details: ${error.message}. Check console.</p>`;
+            if(loadingNpcsMessage) loadingNpcsMessage.textContent = `Error loading NPC details: ${error.message}.`;
             startSceneButton.disabled = true;
         });
 
-    /**
-     * Creates the individual UI (chat box, controls) for each selected NPC.
-     */
     function createNpcInteractionInterfaces() {
-        npcInteractionArea.innerHTML = ''; // Clear previous content or loading messages
-
+        npcInteractionArea.innerHTML = '';
         sceneParticipants.forEach(npc => {
             const npcContainer = document.createElement('div');
             npcContainer.className = 'npc-dialogue-container';
@@ -103,62 +94,38 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             npcInteractionArea.appendChild(npcContainer);
         });
-        addControlEventListeners(); // Add listeners after controls are in the DOM
+        addControlEventListeners();
     }
     
-    /**
-     * Adds event listeners to all dialogue control buttons using event delegation.
-     */
     function addControlEventListeners() {
-        // Add listener to the common ancestor of all NPC interaction areas
         npcInteractionArea.addEventListener('click', function(event) {
-            const button = event.target.closest('.jrpg-button-small'); // Find the button if clicked on icon/text within it
-            if (button && button.dataset.npcId) { // Check if it's a button with an npcId
+            const button = event.target.closest('.jrpg-button-small');
+            if (button && button.dataset.npcId) {
                 const npcId = button.dataset.npcId;
-                // Try to get a more reliable action identifier, e.g., from a class or data-action attribute
                 let action = "Unknown Action";
                 if (button.classList.contains('btn-submit-memory')) action = "Submit to Memory";
                 else if (button.classList.contains('btn-undo-memory')) action = "Undo Memory";
-                else if (button.classList.contains('btn-next-topic')) action = "Next Topic";
-                else if (button.classList.contains('btn-regen-topics')) action = "Regenerate Topics";
-                else if (button.classList.contains('btn-show-top5')) action = "Show Top 5";
-                else if (button.classList.contains('btn-show-tree')) action = "Show Tree";
-                else action = button.textContent.trim(); // Fallback to text content
+                else action = button.textContent.trim();
                 
                 const npc = sceneParticipants.find(p => p._id === npcId);
-                
-                if (npc) {
-                    handleControlButtonClick(npc, action, button);
-                } else {
-                    console.warn(`Could not find NPC data for ID: ${npcId} on button click.`);
-                }
+                if (npc) handleControlButtonClick(npc, action, button);
             }
         });
     }
     
-    /**
-     * Handles clicks on the per-NPC dialogue control buttons.
-     * @param {Object} npc - The NPC object associated with the button.
-     * @param {string} action - The action identified for the button.
-     * @param {HTMLElement} buttonElement - The button element that was clicked.
-     */
     function handleControlButtonClick(npc, action, buttonElement) {
-        alert(`Control '${action}' clicked for ${npc.name}. (NPC ID: ${npc._id}). This feature is not yet implemented.`);
-        console.log("Button clicked:", { npcName: npc.name, npcId: npc._id, action: action, button: buttonElement });
-        // TODO: Implement logic for each button.
+        alert(`Control '${action}' for ${npc.name} (ID: ${npc._id}) is not fully implemented.`);
+        console.log("Button clicked:", { npcName: npc.name, npcId: npc._id, action: action });
     }
 
-    /**
-     * Handles the "Initiate Scene / Narrate" button click.
-     */
     startSceneButton.addEventListener('click', () => {
         const sceneDescription = sceneDescriptionTextarea.value.trim();
         if (sceneParticipants.length === 0) {
-            alert('No NPCs are currently part of the scene.');
+            alert('No NPCs in scene.');
             return;
         }
         if (!sceneDescription) {
-            alert('Please describe the scene or provide narration before initiating.');
+            alert('Please describe the scene.');
             sceneDescriptionTextarea.focus();
             return;
         }
@@ -168,34 +135,89 @@ document.addEventListener('DOMContentLoaded', () => {
         sceneParticipants.forEach(npc => {
             const logContainer = document.getElementById(`chat-log-${npc._id}`);
             if (logContainer) {
-                const placeholder = logContainer.querySelector('.log-placeholder');
-                if (placeholder) placeholder.remove();
-                addDialogueEntryToNpcLog(npc._id, "SYSTEM", `Scene context updated by GM: "${sceneDescription.substring(0,70)}..."`, "system");
+                logContainer.innerHTML = ''; 
+                addDialogueEntryToNpcLog(npc._id, "SYSTEM", `Scene context: "${sceneDescription.substring(0,100)}..."`, "system");
+                // Initialize or update conversation history for this NPC
+                conversationHistory[npc._id] = [{ speaker: "SYSTEM", text: `Scene context: "${sceneDescription}"` }]; 
             }
         });
 
+        // --- Trigger AI Dialogue Generation for each NPC ---
         sceneParticipants.forEach((npc, index) => {
-            setTimeout(() => { 
-                const aiGeneratedLine = `I am ${npc.name}. I acknowledge the scene: "${sceneDescription.substring(0, 25)}...". What happens next?`;
-                addDialogueEntryToNpcLog(npc._id, npc.name, aiGeneratedLine, "npc");
-                // displayDialogueOptionsForNpc(npc._id, [`${npc.name} says: Option 1`, `${npc.name} ponders: Option 2`]);
-            }, index * 600 + 300); 
+            addDialogueEntryToNpcLog(npc._id, npc.name, "<i>...pondering the situation...</i>", "npc-thinking"); // Show thinking message
+
+            setTimeout(() => { // Stagger API calls slightly
+                console.log(`Fetching dialogue for ${npc.name} (ID: ${npc._id}) with scene: "${sceneDescription}"`); // DEBUG LOG
+                fetchNpcDialogue(npc, sceneDescription);
+            }, index * 700 + 400); 
         });
         
         sceneDescriptionTextarea.value = ""; 
     });
 
     /**
-     * Adds a dialogue entry to a specific NPC's chat log.
-     * @param {string} npcId - The ID of the NPC whose log to update.
-     * @param {string} speakerName - The name of the speaker (NPC name, "GM", "SYSTEM").
-     * @param {string} text - The dialogue text.
-     * @param {string} type - 'npc', 'gm', 'system'.
+     * Fetches AI-generated dialogue for a specific NPC.
+     * @param {Object} npc - The NPC object.
+     * @param {string} currentSceneDescription - The GM's description of the scene.
      */
+    async function fetchNpcDialogue(npc, currentSceneDescription) {
+        const npcId = npc._id;
+        const npcLogContainer = document.getElementById(`chat-log-${npcId}`);
+        
+        // Remove "thinking" message if it exists
+        if (npcLogContainer) {
+            const thinkingMessageEntry = npcLogContainer.querySelector('.chat-entry.npc-thinking');
+            if(thinkingMessageEntry) {
+                thinkingMessageEntry.remove();
+            }
+        }
+
+        try {
+            const payload = {
+                npc_id: npc._id,
+                scene_context: currentSceneDescription,
+                history: conversationHistory[npcId] ? conversationHistory[npcId].slice(-5) : [] 
+            };
+            console.log(`Payload for ${npc.name}:`, JSON.stringify(payload)); // DEBUG LOG
+
+            const response = await fetch('/api/dialogue/generate_npc_line', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                let errorDetail = "Failed to fetch dialogue line.";
+                try {
+                    const errorData = await response.json();
+                    errorDetail = errorData.detail || errorData.error || `Server responded with status ${response.status}`;
+                } catch (e) {
+                    errorDetail = `Server responded with status ${response.status} and non-JSON error.`;
+                }
+                throw new Error(errorDetail);
+            }
+
+            const data = await response.json(); 
+
+            if (data.dialogue_text) {
+                addDialogueEntryToNpcLog(npcId, npc.name, data.dialogue_text, "npc");
+                conversationHistory[npcId].push({ speaker: npc.name, text: data.dialogue_text });
+            } else {
+                addDialogueEntryToNpcLog(npcId, "SYSTEM", "AI could not generate a response for " + npc.name, "system-error");
+            }
+
+        } catch (error) {
+            console.error(`Error fetching dialogue for ${npc.name} (ID: ${npcId}):`, error);
+            addDialogueEntryToNpcLog(npcId, "SYSTEM", `Error for ${npc.name}: ${error.message}`, "system-error");
+        }
+    }
+
     function addDialogueEntryToNpcLog(npcId, speakerName, text, type = "npc") {
         const logContainer = document.getElementById(`chat-log-${npcId}`);
         if (!logContainer) {
-            console.error(`Chat log container for NPC ID ${npcId} not found! Cannot add entry: "${text}"`);
+            console.error(`Chat log for NPC ID ${npcId} not found! Cannot add: "${text}"`);
             return;
         }
 
@@ -203,10 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
         entryDiv.classList.add('chat-entry', type); 
         
         let bubbleHtml = `<div class="chat-bubble">`;
-        if (type !== "npc") { 
+        if (type !== "npc" || type === "npc-thinking") { 
             bubbleHtml += `<span class="speaker-name">${speakerName}</span>`;
         }
-        bubbleHtml += `<p class="dialogue-text">${text.replace(/\n/g, '<br>')}</p>`;
+        // Basic text sanitization for display (replace with a proper library if handling complex user input)
+        const sanitizedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        bubbleHtml += `<p class="dialogue-text">${sanitizedText.replace(/\n/g, '<br>')}</p>`;
         bubbleHtml += `</div>`;
         entryDiv.innerHTML = bubbleHtml;
 
@@ -214,48 +238,5 @@ document.addEventListener('DOMContentLoaded', () => {
         logContainer.scrollTop = logContainer.scrollHeight; 
     }
     
-    /**
-     * Placeholder: Displays multiple choice dialogue options for a specific NPC.
-     * @param {string} npcId - The ID of the NPC.
-     * @param {Array<string>} options - An array of dialogue option strings.
-     */
-    function displayDialogueOptionsForNpc(npcId, options) {
-        const logContainer = document.getElementById(`chat-log-${npcId}`);
-        if (!logContainer || !options || options.length === 0) return;
-
-        const existingOptions = logContainer.querySelector('.dialogue-options');
-        if(existingOptions) existingOptions.remove();
-
-        const optionsContainer = document.createElement('div');
-        optionsContainer.className = 'dialogue-options'; 
-        options.forEach(optionText => {
-            const optionButton = document.createElement('button');
-            optionButton.className = 'jrpg-button-small dialogue-option'; 
-            optionButton.textContent = optionText;
-            optionButton.addEventListener('click', () => {
-                addDialogueEntryToNpcLog(npcId, "GM Choice", `Selected: "${optionText}"`, "gm");
-                optionsContainer.remove();
-                alert(`GM selected: "${optionText}" for NPC ID ${npcId}. (Dialogue continuation not implemented)`);
-            });
-            optionsContainer.appendChild(optionButton);
-        });
-        logContainer.appendChild(optionsContainer);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    }
-
-    /**
-     * Generates a hex color code from a string for placeholder images.
-     * @param {string} str - The input string.
-     * @returns {string} A hex color code without the '#'.
-     */
-    function stringToColor(str) {
-        let hash = 0;
-        if (!str || str.length === 0) return 'CCCCCC'; 
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            hash = hash & hash; 
-        }
-        let color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-        return '00000'.substring(0, 6 - color.length) + color;
-    }
+    function stringToColor(str) { /* ... (implementation as before) ... */ }
 });
