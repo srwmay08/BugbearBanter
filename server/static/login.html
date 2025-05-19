@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugbear Banter - Login</title>
+    <link rel="stylesheet" href="/static/css/style.css"> <link rel="stylesheet" href="/static/css/auth.css"> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+    <div class="page-container auth-page-container">
+        <header class="jrpg-header">
+            <h1>Bugbear Banter</h1>
+            <p>Login or Register</p>
+        </header>
+
+        <main class="auth-main-content">
+            <div class="jrpg-box login-form-container">
+                <h2>Email Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" class="jrpg-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" class="jrpg-input" required>
+                    </div>
+                    <button type="submit" class="jrpg-button">Login</button>
+                    <p id="login-message" class="auth-message"></p>
+                </form>
+                <p class="auth-toggle">Don't have an account? <a href="#" id="show-register">Register here</a></p>
+            </div>
+
+            <div class="jrpg-box register-form-container" style="display:none;">
+                <h2>Register</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="reg-email">Email:</label>
+                        <input type="email" id="reg-email" name="email" class="jrpg-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Password:</label>
+                        <input type="password" id="reg-password" name="password" class="jrpg-input" minlength="8" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-confirm-password">Confirm Password:</label>
+                        <input type="password" id="reg-confirm-password" name="confirm_password" class="jrpg-input" required>
+                    </div>
+                    <button type="submit" class="jrpg-button">Register</button>
+                    <p id="register-message" class="auth-message"></p>
+                </form>
+                <p class="auth-toggle">Already have an account? <a href="#" id="show-login">Login here</a></p>
+            </div>
+
+            <div class="jrpg-box google-signin-container">
+                <h2>Or</h2>
+                <div id="g_id_onload"
+                     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com" 
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleGoogleCredentialResponse" 
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left">
+                </div>
+                <p id="google-message" class="auth-message"></p>
+            </div>
+        </main>
+
+        <footer class="jrpg-footer">
+            <p>Bugbear Banter</p>
+        </footer>
+    </div>
+    <script src="/static/js/auth.js"></script> </body>
+</html>

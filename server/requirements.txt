@@ -12,6 +12,9 @@ python-dotenv
 requests
 Flask-Cors
 bcrypt
+Flask-Login  # Add this
+Flask-Bcrypt # Add this (optional, can use bcrypt directly)
+google-auth google-auth-oauthlib google-auth-httplib2 # For Google Sign-In backend
 from flask import Flask, request, jsonify;
 from flask_cors import CORS
 import os

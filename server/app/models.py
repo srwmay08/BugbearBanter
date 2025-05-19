@@ -1,100 +1,94 @@
-# ---- server/app/models.py ----
-# This file will define the structure of your data.
-# Even with NoSQL like MongoDB, having classes can help organize data expectations.
-# You won't use an ORM like SQLAlchemy, but these classes serve as conceptual models.
-
+# app/models.py
 import datetime
 
 class User:
-    """
-    Represents a user in the system.
-    """
-    def __init__(self, email, password_hash, google_id=None, patreon_status=None, created_at=None):
+    def __init__(self, email, password_hash=None, google_id=None, patreon_status=None, created_at=None, _id=None, name=None, picture=None, npc_ids=None): # Added new fields
+        self._id = _id
         self.email = email
-        self.password_hash = password_hash # Store hashed passwords only!
+        self.password_hash = password_hash
         self.google_id = google_id
-        self.patreon_status = patreon_status # e.g., 'active_patron', 'former_patron', None
+        self.patreon_status = patreon_status
+        self.name = name # For Google Sign-In
+        self.picture = picture # For Google Sign-In
         self.created_at = created_at or datetime.datetime.utcnow()
+        self.npc_ids = npc_ids or [] # List of NPC _ids owned by the user
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_sensitive=False):
+        data = {
+            "_id": str(self._id) if self._id else None,
             "email": self.email,
             "google_id": self.google_id,
             "patreon_status": self.patreon_status,
-            "created_at": self.created_at.isoformat()
-            # DO NOT return password_hash
-        }
-
-class NPC:
-    """
-    Represents a Non-Player Character.
-    """
-    def __init__(self, name, game_world_id, appearance=None, personality_traits=None, memories=None, life_events=None, organizations=None, religions=None, towns=None, portrait_url=None, created_at=None, updated_at=None):
-        self.name = name
-        self.game_world_id = game_world_id # ObjectId of the GameWorld it belongs to
-        self.appearance = appearance or ""
-        self.personality_traits = personality_traits or []
-        self.memories = memories or [] # Could be a list of strings or more structured objects
-        self.life_events = life_events or []
-        self.organizations = organizations or []
-        self.religions = religions or []
-        self.towns = towns or [] # Towns the NPC is associated with
-        self.portrait_url = portrait_url
-        self.created_at = created_at or datetime.datetime.utcnow()
-        self.updated_at = updated_at or datetime.datetime.utcnow()
-
-    def to_dict(self):
-        return {
             "name": self.name,
-            "game_world_id": str(self.game_world_id), # Convert ObjectId to string for JSON
-            "appearance": self.appearance,
-            "personality_traits": self.personality_traits,
-            "memories": self.memories,
-            "life_events": self.life_events,
-            "organizations": self.organizations,
-            "religions": self.religions,
-            "towns": self.towns,
-            "portrait_url": self.portrait_url,
+            "picture": self.picture,
             "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat()
+            "npc_ids": [str(npc_id) for npc_id in self.npc_ids]
         }
+        if include_sensitive: # Be careful with this
+            data['password_hash'] = self.password_hash
+        return data
 
-class GameWorld:
-    """
-    Represents a game world/campaign.
-    """
-    def __init__(self, user_id, title, game_system=None, created_at=None):
-        self.user_id = user_id # ObjectId of the user who owns this world
-        self.title = title
-        self.game_system = game_system
-        self.created_at = created_at or datetime.datetime.utcnow()
+    # Flask-Login required properties
+    @property
+    def is_active(self):
+        return True
 
-    def to_dict(self):
-        return {
-            "user_id": str(self.user_id),
-            "title": self.title,
-            "game_system": self.game_system,
-            "created_at": self.created_at.isoformat()
-        }
+    @property
+    def is_authenticated(self):
+        return True # Assume true if User object exists; refine with actual session status
 
-class Scene:
-    """
-    Represents a scene within a game world.
-    """
-    def __init__(self, game_world_id, name, description=None, npc_ids=None, created_at=None):
-        self.game_world_id = game_world_id # ObjectId
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return str(self._id) # Required by Flask-Login
+
+# ... (NPC, GameWorld, Scene models - consider adding user_id to NPC)
+class NPC:
+    def __init__(self, name, appearance=None, personality_traits=None, backstory=None, motivations=None, flaws=None, race=None, npc_class=None, source_file=None, is_soul_npc=False, main_npc_id_if_soul=None, user_id=None, _id=None, speech_patterns=None, mannerisms=None, past_situation=None, current_situation=None, relationships_with_pcs=None): # Added user_id and other fields from JSON
+        self._id = _id
+        self.user_id = user_id # Link NPC to a user
         self.name = name
-        self.description = description
-        self.npc_ids = npc_ids or [] # List of ObjectIds of NPCs in this scene
-        self.created_at = created_at or datetime.datetime.utcnow()
+        self.appearance = appearance
+        self.personality_traits = personality_traits
+        self.backstory = backstory
+        self.motivations = motivations
+        self.flaws = flaws
+        self.race = race
+        self.npc_class = npc_class # 'class' is reserved
+        self.source_file = source_file
+        self.is_soul_npc = is_soul_npc
+        self.main_npc_id_if_soul = main_npc_id_if_soul
+        self.speech_patterns = speech_patterns
+        self.mannerisms = mannerisms
+        self.past_situation = past_situation
+        self.current_situation = current_situation
+        self.relationships_with_pcs = relationships_with_pcs
+
 
     def to_dict(self):
-        return {
-            "game_world_id": str(self.game_world_id),
+        data = {
             "name": self.name,
-            "description": self.description,
-            "npc_ids": [str(npc_id) for npc_id in self.npc_ids],
-            "created_at": self.created_at.isoformat()
+            "appearance": self.appearance,
+            "personality_traits": self.personality_traits, # Keep as string as per your JSON
+            "backstory": self.backstory,
+            "motivations": self.motivations,
+            "flaws": self.flaws,
+            "race": self.race,
+            "class": self.npc_class,
+            "speech_patterns": self.speech_patterns,
+            "mannerisms": self.mannerisms,
+            "past_situation": self.past_situation,
+            "current_situation": self.current_situation,
+            "relationships_with_pcs": self.relationships_with_pcs
+            # Add other fields as needed
         }
-
-# Add other models like Resource, Event, Organization etc. as needed.
+        if self._id:
+            data["_id"] = str(self._id)
+        if self.user_id:
+            data["user_id"] = str(self.user_id)
+        if self.source_file:
+            data["source_file"] = self.source_file
+        # ... include other fields from your JSON ...
+        return data
