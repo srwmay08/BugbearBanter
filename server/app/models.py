@@ -1,5 +1,6 @@
 # app/models.py
 import datetime
+import uuid # Required for memory_id
 
 class User:
     def __init__(self, email, password_hash=None, google_id=None, patreon_status=None, created_at=None, _id=None, name=None, picture=None, npc_ids=None): # Added new fields
@@ -46,7 +47,7 @@ class User:
 
 # ... (NPC, GameWorld, Scene models - consider adding user_id to NPC)
 class NPC:
-    def __init__(self, name, appearance=None, personality_traits=None, backstory=None, motivations=None, flaws=None, race=None, npc_class=None, source_file=None, is_soul_npc=False, main_npc_id_if_soul=None, user_id=None, _id=None, speech_patterns=None, mannerisms=None, past_situation=None, current_situation=None, relationships_with_pcs=None): # Added user_id and other fields from JSON
+    def __init__(self, name, appearance=None, personality_traits=None, backstory=None, motivations=None, flaws=None, race=None, npc_class=None, source_file=None, is_soul_npc=False, main_npc_id_if_soul=None, user_id=None, _id=None, speech_patterns=None, mannerisms=None, past_situation=None, current_situation=None, relationships_with_pcs=None, memories=None): # Added user_id and other fields from JSON, Added memories
         self._id = _id
         self.user_id = user_id # Link NPC to a user
         self.name = name
@@ -65,13 +66,14 @@ class NPC:
         self.past_situation = past_situation
         self.current_situation = current_situation
         self.relationships_with_pcs = relationships_with_pcs
+        self.memories = memories if memories is not None else [] # Initialize memories as an empty list
 
 
     def to_dict(self):
         data = {
             "name": self.name,
             "appearance": self.appearance,
-            "personality_traits": self.personality_traits, # Keep as string as per your JSON
+            "personality_traits": self.personality_traits, 
             "backstory": self.backstory,
             "motivations": self.motivations,
             "flaws": self.flaws,
@@ -81,7 +83,8 @@ class NPC:
             "mannerisms": self.mannerisms,
             "past_situation": self.past_situation,
             "current_situation": self.current_situation,
-            "relationships_with_pcs": self.relationships_with_pcs
+            "relationships_with_pcs": self.relationships_with_pcs,
+            "memories": self.memories # Include memories
             # Add other fields as needed
         }
         if self._id:
