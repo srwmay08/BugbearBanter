@@ -9,6 +9,7 @@ import json # For parsing potential JSON output from AI
 
 class DialogueService:
     def __init__(self):
+        # (Initialization code remains the same)
         print("--- PRINT DEBUG: DialogueService __init__ ENTERED ---")
         current_app.logger.critical("--- CRITICAL DEBUG: DialogueService __init__ ENTERED ---") 
         
@@ -54,6 +55,7 @@ class DialogueService:
             self.model = None
 
     def _get_world_knowledge_summary(self):
+        # (This method remains the same)
         knowledge_parts = []
         try:
             recent_events = list(mongo.db.world_events.find().sort("status", -1).limit(3)) 
@@ -75,27 +77,21 @@ class DialogueService:
                     domains = religion.get('domains', [])
                     domains_str = ', '.join(domains) if isinstance(domains, list) else str(domains)
                     knowledge_parts.append(f"- {religion.get('name')}: Known for {domains_str}. Common saying: \"{religion.get('common_saying','')}\"")
-
-
         except Exception as e:
             current_app.logger.error(f"Error fetching world knowledge from DB: {e}")
             knowledge_parts.append("Error retrieving some world knowledge details.")
-        
         return "\n".join(knowledge_parts) if knowledge_parts else "General world knowledge is currently undefined or sparse."
 
     def _get_npc_memories_summary(self, npc_profile, current_scene_context):
+        # (This method remains the same)
         if not npc_profile or 'memories' not in npc_profile or not npc_profile['memories']:
             return "This NPC has no specific memories recorded yet or they could not be accessed."
-
         memories = npc_profile.get('memories', [])
         if not memories:
             return "This NPC has no specific memories recorded yet."
-
         recent_memories = sorted(memories, key=lambda m: m.get('timestamp', datetime.min), reverse=True)[:3]
-        
         if not recent_memories:
             return "No recent memories found for this NPC."
-
         summary_lines = [f"\n=== {npc_profile.get('name', 'The NPC')}'s Relevant Recent Memories ==="]
         for mem in recent_memories:
             summary = mem.get('ai_generated_summary', 'A past event.')
@@ -103,103 +99,73 @@ class DialogueService:
             timestamp_obj = mem.get('timestamp')
             timestamp_str = timestamp_obj.strftime('%Y-%m-%d %H:%M') if isinstance(timestamp_obj, datetime) else "some time ago"
             summary_lines.append(f"- ({timestamp_str}) You recall: \"{summary}\" (Felt: {sentiment}).")
-        
         return "\n".join(summary_lines)
 
-    # Changed back to synchronous
     def generate_dialogue_for_npc_in_scene(self, npc_profile, scene_description, conversation_history):
+        # (This method remains synchronous and largely the same as last correct version)
         print("--- PRINT DEBUG: DialogueService generate_dialogue_for_npc_in_scene (SYNC) CALLED ---")
         current_app.logger.critical("--- CRITICAL DEBUG: DialogueService generate_dialogue_for_npc_in_scene (SYNC) CALLED ---")
-
         if not self.model:
             current_app.logger.critical("--- CRITICAL DEBUG: generate_dialogue_for_npc_in_scene - Gemini model is None. ---")
             return "[Error: AI Model Not Initialized. Check server logs for API key/configuration issues.]"
-
         npc_name = npc_profile.get('name', 'The NPC')
         current_app.logger.info(f"--- INFO DEBUG: Generating dialogue for: {npc_name} ---")
-
         world_knowledge_summary = self._get_world_knowledge_summary()
         npc_memory_summary = self._get_npc_memories_summary(npc_profile, scene_description)
-
         prompt_lines = []
         prompt_lines.append(f"You are an AI masterfully roleplaying as {npc_name}, a character in a rich fantasy world. Your goal is to deliver compelling, cinematic dialogue that reveals your character's depth, advances the narrative, and engages the Game Master (GM).")
         prompt_lines.append(f"The GM will describe a scene or pose a question. Your response MUST be a single, impactful, in-character line or two of spoken dialogue from {npc_name}'s perspective. Do NOT narrate actions, describe thoughts out of character, or break character. Focus purely on what {npc_name} says aloud.")
-        
         prompt_lines.append(f"\n=== {npc_name}'s In-Depth Character Profile ===")
         prompt_lines.append(f"Name: {npc_name}")
         prompt_lines.append(f"Race: {npc_profile.get('race', 'Unknown')}")
         prompt_lines.append(f"Class/Role: {npc_profile.get('class', 'Unknown')}") 
         prompt_lines.append(f"Appearance: {npc_profile.get('appearance', 'Not clearly described.')}")
-        
-        # Ensure personality_traits is treated as a list of strings
         personality_traits_input = npc_profile.get('personality_traits', [])
         if isinstance(personality_traits_input, str):
             personality_traits_list = [trait.strip() for trait in personality_traits_input.split(',') if trait.strip()]
-            current_app.logger.info(f"--- DEBUG TRAITS (generate_dialogue): Raw 'personality_traits' for {npc_name}: '{personality_traits_input}' (Type: {type(personality_traits_input)}) ---")
-            current_app.logger.info(f"--- DEBUG TRAITS (generate_dialogue): Converted to LIST for {npc_name}: {personality_traits_list} ---")
         elif isinstance(personality_traits_input, list):
             personality_traits_list = personality_traits_input
         else:
             personality_traits_list = []
-            current_app.logger.warning(f"--- WARNING TRAITS (generate_dialogue): 'personality_traits' for {npc_name} is neither string nor list: {personality_traits_input} (Type: {type(personality_traits_input)}) ---")
-
-
         if personality_traits_list:
             prompt_lines.append(f"Core Personality Traits: {', '.join(personality_traits_list)}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
+        elif isinstance(personality_traits_input, str) and personality_traits_input: # Fallback
+            prompt_lines.append(f"Core Personality Traits: {personality_traits_input}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
         else:
-             # Fallback if it's still a string after attempts (should not happen with above logic but as safety)
-            if isinstance(personality_traits_input, str) and personality_traits_input:
-                 prompt_lines.append(f"Core Personality Traits: {personality_traits_input}. These traits MUST be evident in your speech and attitude. Consider the subtext they imply.")
-                 current_app.logger.info(f"--- DEBUG TRAITS (generate_dialogue): Using traits as STRING for {npc_name}: '{personality_traits_input}' ---")
-            else:
-                prompt_lines.append("Core Personality Traits: Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context).")
-
-
+            prompt_lines.append("Core Personality Traits: Not specified. (Adopt a generally observant and cautious demeanor, reacting based on the immediate context).")
         if npc_profile.get('backstory'):
             prompt_lines.append(f"Key Backstory Elements: {npc_profile['backstory'][:400]}...") 
         else:
             prompt_lines.append("Key Backstory Elements: Not specified.")
-
         if npc_profile.get('motivations'):
             prompt_lines.append(f"Driving Motivations: {npc_profile['motivations']}. Your dialogue should reflect these underlying goals and desires, even if subtly.")
         else:
             prompt_lines.append("Driving Motivations: Not specified.")
-
         if npc_profile.get('flaws'):
             prompt_lines.append(f"Significant Flaws/Weaknesses: {npc_profile['flaws']}. These can create internal conflict or lead to characteristic reactions or mistakes in your speech.")
         else:
             prompt_lines.append("Significant Flaws/Weaknesses: Not specified.")
-        
         if npc_profile.get('speech_patterns'):
              prompt_lines.append(f"Speech Patterns/Voice: {npc_profile.get('speech_patterns')}")
-
         prompt_lines.append("\n=== General World Knowledge & Recent Events (You are aware of this as background context) ===")
         prompt_lines.append(world_knowledge_summary if world_knowledge_summary else "The world is a vast place, full of everyday occurrences. Specific details are not immediately relevant unless the scene implies otherwise.")
-        
         prompt_lines.append(npc_memory_summary)
-
         prompt_lines.append("\n=== Current Scene Context (Provided by GM) ===")
         prompt_lines.append(scene_description)
-
         if conversation_history:
             prompt_lines.append("\n=== Recent Turns in Conversation (Your lines are as {npc_name}) ===")
             for entry in conversation_history[-5:]: 
                 prompt_lines.append(f"{entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
-        
         prompt_lines.append(f"\n=== Your Task: {npc_name}'s Cinematic Dialogue Line ===")
         prompt_lines.append(f"Based on your detailed profile ({npc_name}), your awareness of the world knowledge, YOUR RECENT MEMORIES, and the current scene, deliver your next spoken line(s). Aim for dialogue that is memorable, reveals character, and feels like it belongs in a compelling story or movie. Your response should integrate your knowledge subtly if relevant. Avoid generic acknowledgments. Instead, react specifically, ask a pertinent question, make a charged statement, or subtly hint at your thoughts/intentions through your words. How would YOU, {npc_name}, truly respond in this moment to \"{scene_description}\"?")
         prompt_lines.append("Provide ONLY the dialogue spoken by {npc_name}. If the dialogue is short, that's fine, but make it count. If a slightly longer, more impactful statement (1-3 sentences) is appropriate for your character and the situation, deliver that.")
         prompt_lines.append("DIALOGUE RESPONSE:")
-
         full_prompt = "\n".join(prompt_lines)
         current_app.logger.debug(f"--- FULL PROMPT FOR {npc_name} ---\n{full_prompt}\n--- END OF FULL PROMPT ---")
-
         try:
             safety_settings = self.get_default_safety_settings()
             generation_config = genai.types.GenerationConfig(temperature=0.8, top_p=0.95, max_output_tokens=200)
-            # Using synchronous call
             response = self.model.generate_content(full_prompt, generation_config=generation_config, safety_settings=safety_settings) 
-            
             if response.parts:
                 generated_text = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
                 if generated_text.lower().startswith(f"{npc_name.lower()}:"):
@@ -210,7 +176,6 @@ class DialogueService:
                         generated_text = generated_text[len(prefix):].strip()
                 if len(generated_text) > 1 and ((generated_text.startswith('"') and generated_text.endswith('"')) or (generated_text.startswith("'") and generated_text.endswith("'"))):
                     generated_text = generated_text[1:-1]
-                
                 current_app.logger.info(f"Successfully generated dialogue for {npc_name}: \"{generated_text}\"")
                 return generated_text if generated_text else f"[{npc_name} pauses, considering the weight of the moment.]" 
             else: 
@@ -219,25 +184,24 @@ class DialogueService:
                     block_reason_msg = response.prompt_feedback.block_reason_message
                 current_app.logger.error(f"Prompt for {npc_name} was BLOCKED by API or empty. Reason: {block_reason_msg}. Full feedback: {response.prompt_feedback if hasattr(response, 'prompt_feedback') else 'N/A'}")
                 return f"[{npc_name} seems unable to respond clearly. AI Reason: {block_reason_msg}]"
-
         except Exception as e:
             current_app.logger.critical(f"Exception during Gemini API call for {npc_name}: {e}", exc_info=True)
             return f"[Error: AI service encountered an issue for {npc_name}. Check server logs for full exception.]"
 
-    async def _extract_memory_details_with_ai(self, npc_profile, dialogue_exchange, scene_context_for_memory):
+    # Changed back to synchronous
+    def _extract_memory_details_with_ai(self, npc_profile, dialogue_exchange, scene_context_for_memory):
         if not self.model:
             current_app.logger.error("Memory extraction: AI model not initialized.")
             return None
 
         npc_name = npc_profile.get('name', 'The NPC')
-        
         personality_traits_input = npc_profile.get('personality_traits', [])
         if isinstance(personality_traits_input, str):
-            personality_summary = personality_traits_input # Use as is if already a descriptive string
+            personality_summary = personality_traits_input
         elif isinstance(personality_traits_input, list):
             personality_summary = ", ".join(personality_traits_input)
         else:
-            personality_summary = "observant" # Default
+            personality_summary = "observant"
         
         extraction_prompt_lines = [
             f"You are an AI specializing in analyzing dialogue for memory creation in a role-playing game.",
@@ -262,10 +226,11 @@ class DialogueService:
         current_app.logger.debug(f"Memory Extraction Prompt for {npc_name}:\n{extraction_prompt}")
 
         try:
-            extraction_config = genai.types.GenerationConfig(temperature=0.4, max_output_tokens=350) # Increased tokens slightly
+            extraction_config = genai.types.GenerationConfig(temperature=0.4, max_output_tokens=350)
             safety_settings = self.get_default_safety_settings()
             
-            response = await self.model.generate_content_async(
+            # Using synchronous call
+            response = self.model.generate_content(
                 extraction_prompt,
                 generation_config=extraction_config,
                 safety_settings=safety_settings
@@ -277,7 +242,7 @@ class DialogueService:
                     raw_json_text = raw_json_text[7:]
                 if raw_json_text.endswith("```"):
                     raw_json_text = raw_json_text[:-3]
-                raw_json_text = raw_json_text.strip() # Ensure no leading/trailing whitespace
+                raw_json_text = raw_json_text.strip()
                 
                 current_app.logger.debug(f"Raw JSON from AI for memory extraction: {raw_json_text}")
                 extracted_data = json.loads(raw_json_text)
@@ -292,9 +257,9 @@ class DialogueService:
             current_app.logger.error(f"Error during AI memory extraction for {npc_name}: {e}", exc_info=True)
             return None
 
-
-    async def handle_npc_action(self, npc_id, action_type, payload, npc_profile, scene_description, conversation_history):
-        current_app.logger.info(f"--- INFO DEBUG: Handling action '{action_type}' for NPC ID '{npc_id}' ---")
+    # Changed back to synchronous
+    def handle_npc_action(self, npc_id, action_type, payload, npc_profile, scene_description, conversation_history):
+        current_app.logger.info(f"--- INFO DEBUG: Handling action '{action_type}' for NPC ID '{npc_id}' (SYNC) ---")
         npc_name = npc_profile.get('name', 'The NPC')
 
         if action_type == "submit_memory":
@@ -310,7 +275,8 @@ class DialogueService:
             if not full_npc_data_for_memory:
                  return {"status": "error", "message": f"NPC {npc_id} not found for memory submission."}
 
-            extracted_details = await self._extract_memory_details_with_ai(full_npc_data_for_memory, dialogue_to_remember, scene_context_for_memory)
+            # Calling synchronous version
+            extracted_details = self._extract_memory_details_with_ai(full_npc_data_for_memory, dialogue_to_remember, scene_context_for_memory)
 
             if extracted_details:
                 memory_entry = {
@@ -364,16 +330,11 @@ class DialogueService:
             personality_traits_input = full_npc_data_for_action.get('personality_traits', [])
             if isinstance(personality_traits_input, str):
                 personality_traits_list = [trait.strip() for trait in personality_traits_input.split(',') if trait.strip()]
-                current_app.logger.info(f"--- DEBUG TRAITS ({action_type}): Raw 'personality_traits' for {npc_name}: '{personality_traits_input}' (Type: {type(personality_traits_input)}) ---")
-                current_app.logger.info(f"--- DEBUG TRAITS ({action_type}): Converted to LIST for {npc_name}: {personality_traits_list} ---")
             elif isinstance(personality_traits_input, list):
                 personality_traits_list = personality_traits_input
             else:
                 personality_traits_list = []
-                current_app.logger.warning(f"--- WARNING TRAITS ({action_type}): 'personality_traits' for {npc_name} is neither string nor list: {personality_traits_input} (Type: {type(personality_traits_input)}) ---")
-            
             personality_summary = ', '.join(personality_traits_list) if personality_traits_list else 'Unknown'
-
 
             topic_prompt_lines = [
                 f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile and memories below) is in the following scene, with some general world context.",
@@ -385,7 +346,6 @@ class DialogueService:
             ]
             for entry in conversation_history[-3:]: 
                 topic_prompt_lines.append(f"  {entry.get('speaker', 'Unknown')}: \"{entry.get('text', '')}\"")
-            
             topic_prompt_lines.append(f"\nBased on all this (especially {npc_name}'s recent memories and personality), suggest 3-5 distinct and engaging conversation topics, questions, or observations that {npc_name} might bring up or be interested in discussing next. Each topic should be a short phrase or question suitable for a player to click on to steer the conversation.")
             topic_prompt_lines.append("Output each topic on a new line, starting with '- '.")
             topic_prompt = "\n".join(topic_prompt_lines)
@@ -396,8 +356,8 @@ class DialogueService:
                 if not self.model: return {"status": "error", "message": "AI model not initialized."}
                 action_gen_config = genai.types.GenerationConfig(temperature=0.75, max_output_tokens=150)
                 safety_settings_action = self.get_default_safety_settings()
-
-                response = await self.model.generate_content_async(topic_prompt, generation_config=action_gen_config, safety_settings=safety_settings_action)
+                # Using synchronous call
+                response = self.model.generate_content(topic_prompt, generation_config=action_gen_config, safety_settings=safety_settings_action)
                 
                 if response.parts:
                     text_from_ai = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
@@ -421,18 +381,14 @@ class DialogueService:
                  return {"status": "error", "message": f"NPC {npc_id} not found for {action_type}."}
             
             npc_memory_summary = self._get_npc_memories_summary(full_npc_data_for_action, scene_description)
-            
             personality_traits_input = full_npc_data_for_action.get('personality_traits', [])
             if isinstance(personality_traits_input, str):
                 personality_traits_list = [trait.strip() for trait in personality_traits_input.split(',') if trait.strip()]
-                current_app.logger.info(f"--- DEBUG TRAITS ({action_type}): Raw 'personality_traits' for {npc_name}: '{personality_traits_input}' (Type: {type(personality_traits_input)}) ---")
             elif isinstance(personality_traits_input, list):
                 personality_traits_list = personality_traits_input
             else:
-                personality_traits_list = [] # Default to empty list
-
+                personality_traits_list = []
             personality_summary = ', '.join(personality_traits_list) if personality_traits_list else 'Unknown'
-
 
             options_prompt_lines = [
                 f"You are an AI assistant for a tabletop RPG. The NPC {npc_name} (profile, memories, and scene context are below) needs some dialogue options.",
@@ -452,7 +408,8 @@ class DialogueService:
             try:
                 if not self.model: return {"status": "error", "message": "AI model not initialized."}
                 action_gen_config = genai.types.GenerationConfig(temperature=0.85, max_output_tokens=300) 
-                response = await self.model.generate_content_async(options_prompt, generation_config=action_gen_config, safety_settings=self.get_default_safety_settings()) 
+                # Using synchronous call
+                response = self.model.generate_content(options_prompt, generation_config=action_gen_config, safety_settings=self.get_default_safety_settings()) 
 
                 if response.parts:
                     text_from_ai = "".join(part.text for part in response.parts if hasattr(part, 'text')).strip()
