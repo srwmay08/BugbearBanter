@@ -3,16 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Element References ---
     const npcInteractionArea = document.getElementById('npc-interaction-area');
     const sceneDescriptionTextarea = document.getElementById('scene-description-textarea');
-    const startSceneButton = document.getElementById('start-scene-button'); // From scene.html
+    const startSceneButton = document.getElementById('start-scene-button'); 
     const currentSceneDescriptionDisplay = document.getElementById('current-scene-description-display');
     let loadingNpcsMessage = npcInteractionArea ? npcInteractionArea.querySelector('.loading-npcs-message') : null;
 
     // --- State Variables ---
-    let sceneParticipants = []; // Stores full NPC objects for the current scene
-    let conversationHistory = {}; // Object to store conversation history per NPC: { npcId: [{speaker, text}, ...] }
-    let currentSceneContext = ""; // Store the latest scene description globally for this page
+    let sceneParticipants = []; 
+    let conversationHistory = {}; 
+    let currentSceneContext = ""; 
 
-    // --- Initial Error Checks for Essential Elements ---
     if (!npcInteractionArea || !sceneDescriptionTextarea || !startSceneButton || !currentSceneDescriptionDisplay) {
         console.error('CRITICAL: One or more essential UI elements for the scene page are missing from scene.html!');
         if(npcInteractionArea) {
@@ -68,12 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createNpcInteractionInterfaces() {
         npcInteractionArea.innerHTML = ''; 
-
         sceneParticipants.forEach(npc => {
             const npcContainer = document.createElement('div');
             npcContainer.className = 'npc-dialogue-container';
             npcContainer.dataset.npcId = npc._id; 
-
             const npcInitials = npc.name ? npc.name.substring(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '') : '??';
             const placeholderBgColor = stringToColor(npc.name || "defaultNPC_bg"); 
             const portraitUrl = `https://placehold.co/50x50/${placeholderBgColor}/FFFFFF?text=${npcInitials}&font=source-sans-pro`;
@@ -121,16 +118,37 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Action '${actionType}' triggered for ${npc.name} (ID: ${npc._id})`);
         addDialogueEntryToNpcLog(npc._id, "GM Action", `GM triggered: ${actionType} for ${npc.name}`, "system-info");
 
-        let payloadSpecifics = {}; // Action-specific data to send to backend
+        let payloadSpecifics = {}; 
         if (actionType === "submit_memory") {
-            const historyForMemory = conversationHistory[npc._id] ? conversationHistory[npc._id].slice(-2) : []; 
-            if (historyForMemory.length === 0) {
+            const historyForNpc = conversationHistory[npc._id] || [];
+            let relevantExchange = [];
+
+            if (historyForNpc.length > 0) {
+                const lastEntry = historyForNpc[historyForNpc.length - 1];
+                // If the last entry is from the NPC, try to get the preceding entry if it's from GM/System/Player
+                if (lastEntry.speaker === npc.name && historyForNpc.length > 1) {
+                    const secondLastEntry = historyForNpc[historyForNpc.length - 2];
+                    // We want a GM/Player -> NPC sequence ideally, or just NPC's last significant line
+                    if (secondLastEntry.speaker !== npc.name) {
+                        relevantExchange.push(secondLastEntry); // GM/Player/System line
+                    }
+                    relevantExchange.push(lastEntry); // NPC line
+                } else if (lastEntry.speaker !== npc.name && historyForNpc.length > 1) {
+                    // Last entry is GM/Player, try to find NPC's response before that.
+                    // This case is less common for "To Memory" which usually follows NPC speech.
+                    // For simplicity, we'll just take the last two if complex, or just the last one if it's NPC.
+                    relevantExchange = historyForNpc.slice(-2); // Default to last 2
+                } else {
+                     relevantExchange.push(lastEntry); // Only one entry, or last entry is the NPC
+                }
+            }
+
+            if (relevantExchange.length === 0) {
                 alert(`No recent dialogue to submit to memory for ${npc.name}.`);
                 addDialogueEntryToNpcLog(npc._id, "SYSTEM", `No recent dialogue for memory submission.`, "system-error");
                 return;
             }
-            payloadSpecifics.dialogue_exchange = historyForMemory.map(entry => `${entry.speaker}: ${entry.text}`).join('\n');
-            // Also include currentSceneContext for the memory submission
+            payloadSpecifics.dialogue_exchange = relevantExchange.map(entry => `${entry.speaker}: ${entry.text}`).join('\n');
             payloadSpecifics.scene_context_for_memory = currentSceneContext; 
         }
         
@@ -140,9 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const apiPayload = {
                 npc_id: npc._id,
                 action_type: actionType,
-                payload: payloadSpecifics, // Use the specifics gathered above
+                payload: payloadSpecifics, 
                 scene_description: currentSceneContext, 
-                history: conversationHistory[npc._id] ? conversationHistory[npc._id].slice(-10) : [] // Send more history for context to actions
+                history: conversationHistory[npc._id] ? conversationHistory[npc._id].slice(-10) : [] 
             };
             console.log(`Sending payload for action '${actionType}' for ${npc.name}:`, apiPayload);
 
@@ -210,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (logContainer) {
                 logContainer.innerHTML = ''; 
                 addDialogueEntryToNpcLog(npc._id, "SYSTEM", `Scene context: "${currentSceneContext.substring(0,100)}..."`, "system");
+                // Clear and re-initialize conversation history for the new scene for this NPC
                 conversationHistory[npc._id] = [{ speaker: "SYSTEM", text: `Scene context: "${currentSceneContext}"` }]; 
             }
         });
@@ -240,7 +259,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = {
                 npc_id: npc._id,
                 scene_context: sceneDescForCall, 
-                // Send a bit more history for initial line generation too
                 history: conversationHistory[npcId] ? conversationHistory[npcId].slice(-10) : [] 
             };
             console.log(`Payload for initial line for ${npc.name}:`, JSON.stringify(payload));
@@ -263,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json(); 
             if (data.dialogue_text) {
                 addDialogueEntryToNpcLog(npcId, npc.name, data.dialogue_text, "npc");
-                conversationHistory[npcId].push({ speaker: npc.name, text: data.dialogue_text });
+                // conversationHistory[npcId].push({ speaker: npc.name, text: data.dialogue_text }); // Moved to addDialogueEntryToNpcLog
             } else {
                 addDialogueEntryToNpcLog(npcId, "SYSTEM", "AI could not generate an initial response for " + npc.name, "system-error");
             }
@@ -279,11 +297,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(`Chat log container for NPC ID ${npcId} not found! Cannot add entry: "${text}"`);
             return;
         }
-
         const entryDiv = document.createElement('div');
         const typeClass = type.startsWith('system') ? 'system-message' : type; 
         entryDiv.classList.add('chat-entry', typeClass); 
-        
         let bubbleHtml = `<div class="chat-bubble">`;
         if (type !== "npc" || type === "npc-thinking" || type.startsWith("system")) { 
             bubbleHtml += `<span class="speaker-name">${speakerName}</span>`;
@@ -293,13 +309,17 @@ document.addEventListener('DOMContentLoaded', () => {
         bubbleHtml += `</div>`;
         entryDiv.innerHTML = bubbleHtml;
 
-        // Add to conversation history for this NPC if it's actual dialogue or GM choice
-        if (type === "npc" || type === "gm") {
-             if (!conversationHistory[npcId]) conversationHistory[npcId] = [];
-             conversationHistory[npcId].push({ speaker: speakerName, text: text }); // Store original text, not sanitized
+        // Add to this specific NPC's conversation history if it's actual dialogue, GM choice, or initial system context
+        // This helps keep track of what was "said" or "happened" in this NPC's view for memory and context.
+        if (type === "npc" || type === "gm" || (type === "system" && speakerName === "SYSTEM" && text.startsWith("Scene context:")) ) {
+             if (!conversationHistory[npcId]) {
+                conversationHistory[npcId] = [];
+             }
+             // Avoid adding purely functional GM Action messages to history used for AI context
+             if (!(type === "system-info" && speakerName === "GM Action")) {
+                conversationHistory[npcId].push({ speaker: speakerName, text: text }); 
+             }
         }
-
-
         logContainer.appendChild(entryDiv);
         logContainer.scrollTop = logContainer.scrollHeight; 
     }
@@ -307,31 +327,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayDialogueOptionsForNpc(npcId, options, title = "Suggested Options:") {
         const logContainer = document.getElementById(`chat-log-${npcId}`);
         if (!logContainer || !options || options.length === 0) return;
-
         const existingOptions = logContainer.querySelector('.dialogue-options-container');
         if(existingOptions) existingOptions.remove(); 
-
         const optionsContainer = document.createElement('div');
         optionsContainer.className = 'dialogue-options-container'; 
-        
         const titleElement = document.createElement('p');
         titleElement.className = 'dialogue-options-title'; 
         titleElement.textContent = title;
         optionsContainer.appendChild(titleElement);
-
         options.forEach(optionText => {
             const optionButton = document.createElement('button');
             optionButton.className = 'jrpg-button-small dialogue-option'; 
             optionButton.textContent = optionText;
             optionButton.addEventListener('click', () => {
                 addDialogueEntryToNpcLog(npcId, "GM Choice", `Selected: "${optionText}"`, "gm");
-                
                 const npcToRespond = sceneParticipants.find(p => p._id === npcId);
                 if (npcToRespond) {
                     addDialogueEntryToNpcLog(npcId, npcToRespond.name, `<i>...reacting to GM's choice: "${optionText.substring(0,30)}..."</i>`, "npc-thinking");
                     fetchNpcInitialDialogue(npcToRespond, optionText); 
                 }
-                
                 optionsContainer.remove(); 
             });
             optionsContainer.appendChild(optionButton);
