@@ -26,7 +26,22 @@
                         <label for="password">Password:</label>
                         <input type="password" id="password" name="password" class="jrpg-input" required>
                     </div>
-                    <button type="submit" class="jrpg-button">Login</button>
+                    <button type="submit" class="jrpg-button">Login</button><h2>OR</h2><div id="g_id_onload"
+                        data-client_id="596182966339-53c7tg59ck20qt0h9l5iunjg00v2jg1v.apps.googleusercontent.com" 
+                        data-context="signin"
+                        data-ux_mode="popup"
+                        data-callback="handleGoogleCredentialResponse" 
+                        data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                        data-type="standard"
+                        data-shape="rectangular"
+                        data-theme="outline"
+                        data-text="signin_with"
+                        data-size="large"
+                        data-logo_alignment="left">
+                    <p id="google-message" class="auth-message"></p>
+            </div>
                     <p id="login-message" class="auth-message"></p>
                 </form>
                 <p class="auth-toggle">Don't have an account? <a href="#" id="show-register">Register here</a></p>
@@ -53,25 +68,7 @@
                 <p class="auth-toggle">Already have an account? <a href="#" id="show-login">Login here</a></p>
             </div>
 
-            <div class="jrpg-box google-signin-container">
-                <h2>Or</h2>
-                <div id="g_id_onload"
-                     data-client_id="596182966339-53c7tg59ck20qt0h9l5iunjg00v2jg1v.apps.googleusercontent.com" 
-                     data-context="signin"
-                     data-ux_mode="popup"
-                     data-callback="handleGoogleCredentialResponse" 
-                     data-auto_prompt="false">
-                </div>
-                <div class="g_id_signin"
-                     data-type="standard"
-                     data-shape="rectangular"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="large"
-                     data-logo_alignment="left">
-                </div>
-                <p id="google-message" class="auth-message"></p>
-            </div>
+            
         </main>
 
         <footer class="jrpg-footer">
