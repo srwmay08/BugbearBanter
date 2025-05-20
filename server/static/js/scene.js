@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let conversationHistory = {}; 
     let currentSceneContext = ""; 
 
-    // --- Helper Function to Escape HTML (and JS template literal-breaking chars like backtick) ---
+    // --- Helper Function to Escape HTML ---
     function escapeForHtml(unsafe) {
         if (unsafe === null || typeof unsafe === 'undefined') {
             return '';
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
              .replace(/>/g, "&gt;")
              .replace(/"/g, "&quot;")
              .replace(/'/g, "&#039;")
-             .replace(/`/g, "&#96;"); // Escape backticks for JS template literal safety
+             .replace(/`/g, "&#96;"); 
     }
 
     if (!npcInteractionArea || !sceneDescriptionTextarea || !startSceneButton || !currentSceneDescriptionDisplay) {
@@ -81,39 +81,71 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
     function createNpcInteractionInterfaces() {
-        npcInteractionArea.innerHTML = ''; 
+        npcInteractionArea.innerHTML = ''; // Clear previous content
+
         sceneParticipants.forEach(npc => {
             const npcContainer = document.createElement('div');
             npcContainer.className = 'npc-dialogue-container';
-            
-            // Ensure npc._id is treated as a simple string for dataset, no need to escape here.
-            // Browsers handle dataset property values safely.
-            npcContainer.dataset.npcId = npc._id; 
+            npcContainer.dataset.npcId = npc._id; // Original ID for lookups
 
-            const npcNameForDisplay = escapeForHtml(npc.name || 'Unknown NPC');
-            const npcIdForHtml = escapeForHtml(npc._id); // For use in constructing element IDs
+            const npcNameDisplay = npc.name || 'Unknown NPC';
+            const npcIdHtml = npc._id; // Original ID for data attributes, DOM handles it.
 
             const npcInitials = npc.name ? npc.name.substring(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '') : '??';
-            const placeholderBgColor = stringToColor(npc.name || "defaultNPC_bg"); 
-            const portraitUrl = `https://placehold.co/50x50/<span class="math-inline">\{placeholderBgColor\}/FFFFFF?text\=</span>{encodeURIComponent(npcInitials)}&font=source-sans-pro`; // Ensure npcInitials are URL encoded for the text param
+            const placeholderBgColor = stringToColor(npc.name || "defaultNPC_bg");
+            const portraitUrl = `https://placehold.co/50x50/${placeholderBgColor}/FFFFFF?text=${encodeURIComponent(npcInitials)}&font=source-sans-pro`;
 
-            npcContainer.innerHTML = `
-                <div class="npc-header">
-                    <img src="${portraitUrl}" alt="Portrait of <span class="math-inline">\{npcNameForDisplay\}" class\="npc\-header\-portrait" onerror\="this\.style\.display\='none';"\>
-<h3 class\="npc\-header\-name"\></span>{npcNameForDisplay}</h3>
-                </div>
-                <div class="npc-chat-log" id="chat-log-<span class="math-inline">\{npcIdForHtml\}"\>
-<p class\="log\-placeholder"\>Awaiting interaction\.\.\.</p\>
-</div\>
-<div class\="npc\-dialogue\-controls"\>
-<button class\="jrpg\-button\-small btn\-submit\-memory" data\-action\="submit\_memory" data\-npc\-id\="</span>{npcIdForHtml}" title="Commit last exchange to <span class="math-inline">\{npcNameForDisplay\}'s memory"\>To Memory</button\>
-<button class\="jrpg\-button\-small btn\-undo\-memory" data\-action\="undo\_memory" data\-npc\-id\="</span>{npcIdForHtml}" title="Undo last memory submission for <span class="math-inline">\{npcNameForDisplay\}"\>Undo Mem</button\>
-<button class\="jrpg\-button\-small btn\-next\-topic" data\-action\="next\_topic" data\-npc\-id\="</span>{npcIdForHtml}" title="Advance <span class="math-inline">\{npcNameForDisplay\} to the next generated topic"\>Next Topic</button\>
-<button class\="jrpg\-button\-small btn\-regen\-topics" data\-action\="regenerate\_topics" data\-npc\-id\="</span>{npcIdForHtml}" title="Generate new conversation topics for <span class="math-inline">\{npcNameForDisplay\}"\>Regen Topics</button\>
-<button class\="jrpg\-button\-small btn\-show\-top5" data\-action\="show\_top5\_options" data\-npc\-id\="</span>{npcIdForHtml}" title="Show top 5 dialogue options for <span class="math-inline">\{npcNameForDisplay\}"\>Top 5</button\>
-<button class\="jrpg\-button\-small btn\-show\-tree" data\-action\="show\_tree" data\-npc\-id\="</span>{npcIdForHtml}" title="Show conversation tree for ${npcNameForDisplay} (future)">Tree</button>
-                </div>
-            `;
+            // NPC Header
+            const npcHeaderDiv = document.createElement('div');
+            npcHeaderDiv.className = 'npc-header';
+
+            const portraitImg = document.createElement('img');
+            portraitImg.src = portraitUrl;
+            portraitImg.alt = `Portrait of ${npcNameDisplay}`; // Text content, browser handles rendering
+            portraitImg.className = 'npc-header-portrait';
+            portraitImg.onerror = function() { this.style.display='none'; };
+            npcHeaderDiv.appendChild(portraitImg);
+
+            const npcNameH3 = document.createElement('h3');
+            npcNameH3.className = 'npc-header-name';
+            npcNameH3.textContent = npcNameDisplay;
+            npcHeaderDiv.appendChild(npcNameH3);
+            npcContainer.appendChild(npcHeaderDiv);
+
+            // Chat Log
+            const chatLogDiv = document.createElement('div');
+            chatLogDiv.className = 'npc-chat-log';
+            chatLogDiv.id = `chat-log-${npcIdHtml}`; // Use original ID for targeting
+            const logPlaceholderP = document.createElement('p');
+            logPlaceholderP.className = 'log-placeholder';
+            logPlaceholderP.textContent = 'Awaiting interaction...';
+            chatLogDiv.appendChild(logPlaceholderP);
+            npcContainer.appendChild(chatLogDiv);
+
+            // Dialogue Controls
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'npc-dialogue-controls';
+
+            const controlButtonData = [
+                { action: "submit_memory", title: `Commit last exchange to ${npcNameDisplay}'s memory`, text: "To Memory" },
+                { action: "undo_memory", title: `Undo last memory submission for ${npcNameDisplay}`, text: "Undo Mem" },
+                { action: "next_topic", title: `Advance ${npcNameDisplay} to the next generated topic`, text: "Next Topic" },
+                { action: "regenerate_topics", title: `Generate new conversation topics for ${npcNameDisplay}`, text: "Regen Topics" },
+                { action: "show_top5_options", title: `Show top 5 dialogue options for ${npcNameDisplay}`, text: "Top 5" },
+                { action: "show_tree", title: `Show conversation tree for ${npcNameDisplay} (future)`, text: "Tree" }
+            ];
+
+            controlButtonData.forEach(btnData => {
+                const button = document.createElement('button');
+                button.className = 'jrpg-button-small'; // Main class
+                button.classList.add(`btn-${btnData.action.replace('_', '-')}`); // Specific class if needed
+                button.dataset.action = btnData.action;
+                button.dataset.npcId = npcIdHtml; // Use original ID
+                button.title = btnData.title; // Browsers handle attribute escaping well
+                button.textContent = btnData.text;
+                controlsDiv.appendChild(button);
+            });
+            npcContainer.appendChild(controlsDiv);
             npcInteractionArea.appendChild(npcContainer);
         });
         addControlEventListeners(); 
@@ -125,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (button) { 
                 const npcId = button.dataset.npcId;
                 const actionType = button.dataset.action; 
-                const npc = sceneParticipants.find(p => p._id === npcId); // Use original _id for lookup
+                const npc = sceneParticipants.find(p => p._id === npcId);
                 
                 if (npc) {
                     handleNpcSpecificAction(npc, actionType, button);
@@ -137,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     async function handleNpcSpecificAction(npc, actionType, buttonElement) {
-        const npcNameSafe = escapeForHtml(npc.name);
+        const npcNameSafe = escapeForHtml(npc.name); // For display in logs/messages
         console.log(`Action '${actionType}' triggered for ${npcNameSafe} (ID: ${npc._id})`);
         addDialogueEntryToNpcLog(npc._id, "GM Action", `GM triggered: ${escapeForHtml(actionType)} for ${npcNameSafe}`, "system-info");
 
@@ -223,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSceneDescriptionDisplay.textContent = `Current Scene: ${escapeForHtml(currentSceneContext)}`;
         
         sceneParticipants.forEach(npc => {
-            const logContainer = document.getElementById(`chat-log-${escapeForHtml(npc._id)}`);
+            const logContainer = document.getElementById(`chat-log-${npc._id}`); // Use original ID
             if (logContainer) {
                 logContainer.innerHTML = ''; 
                 addDialogueEntryToNpcLog(npc._id, "SYSTEM", `Scene context: "${escapeForHtml(currentSceneContext.substring(0,100))}..."`, "system");
@@ -234,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sceneParticipants.forEach((npc, index) => {
             addDialogueEntryToNpcLog(npc._id, npc.name, "<i>...formulating a response...</i>", "npc-thinking"); 
             setTimeout(() => { 
-                // console.log(`Workspaceing initial dialogue for ${escapeForHtml(npc.name)} (ID: <span class="math-inline">\{npc\.\_id\}\) with scene\: "</span>{escapeForHtml(currentSceneContext)}"`);
+                // console.log(`Workspaceing initial dialogue for ${escapeForHtml(npc.name)} (ID: ${npc._id}) with scene: "${escapeForHtml(currentSceneContext)}"`);
                 fetchNpcInitialDialogue(npc, currentSceneContext); 
             }, index * 700 + 400); 
         });
@@ -242,8 +274,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function fetchNpcInitialDialogue(npc, sceneDescForCall) {
-        const npcId = npc._id; // Use original ID for API calls
-        const npcLogContainer = document.getElementById(`chat-log-${escapeForHtml(npcId)}`);
+        const npcId = npc._id; 
+        const npcLogContainer = document.getElementById(`chat-log-${npcId}`);
         if (npcLogContainer) {
             const thinkingMessageEntry = npcLogContainer.querySelector('.chat-entry.npc-thinking');
             if(thinkingMessageEntry) thinkingMessageEntry.remove();
@@ -268,20 +300,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addDialogueEntryToNpcLog(npcId, speakerName, text, type = "npc") {
-        const logContainer = document.getElementById(`chat-log-${escapeForHtml(npcId)}`);
+        const logContainer = document.getElementById(`chat-log-${npcId}`); // Use original ID
         if (!logContainer) { console.error(`Chat log container for NPC ID ${npcId} not found!`); return; }
         const entryDiv = document.createElement('div');
         const typeClass = type.startsWith('system') ? 'system-message' : type; 
         entryDiv.classList.add('chat-entry', typeClass); 
-        let bubbleHtml = `<div class="chat-bubble">`;
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.className = 'chat-bubble';
+
         const speakerNameSafe = escapeForHtml(speakerName);
         if (type !== "npc" || type === "npc-thinking" || type.startsWith("system")) { 
-            bubbleHtml += `<span class="speaker-name">${speakerNameSafe}</span>`;
+            const speakerSpan = document.createElement('span');
+            speakerSpan.className = 'speaker-name';
+            speakerSpan.textContent = speakerNameSafe;
+            bubbleDiv.appendChild(speakerSpan);
         }
-        const displayText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        bubbleHtml += `<p class="dialogue-text">${displayText.replace(/\n/g, '<br>')}</p>`;
-        bubbleHtml += `</div>`;
-        entryDiv.innerHTML = bubbleHtml;
+        
+        const dialogueP = document.createElement('p');
+        dialogueP.className = 'dialogue-text';
+        // Sanitize text for display using textContent or careful innerHTML
+        // Using textContent is safest for directly inserting text that might contain HTML-like chars
+        // If you need line breaks, you might need to split and append text nodes and br elements
+        const lines = text.split('\n');
+        lines.forEach((line, index) => {
+            dialogueP.appendChild(document.createTextNode(line));
+            if (index < lines.length - 1) {
+                dialogueP.appendChild(document.createElement('br'));
+            }
+        });
+
+        bubbleDiv.appendChild(dialogueP);
+        entryDiv.appendChild(bubbleDiv);
 
         if (type === "npc" || type === "gm" || (type === "system" && speakerName === "SYSTEM" && text.startsWith("Scene context:")) ) {
              if (!conversationHistory[npcId]) conversationHistory[npcId] = [];
@@ -294,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function displayDialogueOptionsForNpc(npcId, options, title = "Suggested Options:") {
-        const logContainer = document.getElementById(`chat-log-${escapeForHtml(npcId)}`);
+        const logContainer = document.getElementById(`chat-log-${npcId}`); // Use original ID
         if (!logContainer || !options || options.length === 0) return;
         const existingOptions = logContainer.querySelector('.dialogue-options-container');
         if(existingOptions) existingOptions.remove(); 
