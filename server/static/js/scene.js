@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(allCharacters => {
+            // *** DEBUGGING: Log raw data from API ***
             console.log('scene.js: Data received from /api/npcs:', JSON.stringify(allCharacters, null, 2)); 
 
             if (!Array.isArray(allCharacters)) {
@@ -58,11 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const pcs = allCharacters.filter(char => char.type === 'pc');
+            // *** DEBUGGING: Log filtered PCs ***
             console.log('scene.js: Filtered PCs for list:', JSON.stringify(pcs, null, 2)); 
             populatePlayerCharacterList(pcs); // Populate PC list first
 
             // Then, filter for and process NPCs selected for the scene
             selectedNpcIdsForScene.forEach(id => {
+                // Ensure we only pick NPCs for scene participation, undefined type defaults to NPC for backward compatibility
                 const npc = allCharacters.find(char => (char.type === 'npc' || typeof char.type === 'undefined') && char._id === id); 
                 if (npc) {
                     sceneParticipantNpcs.push(npc);
@@ -94,14 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!pcs || pcs.length === 0) {
             playerCharacterListUl.innerHTML = '<li class="no-pcs-found"><p>No player characters found or loaded from the database.</p></li>';
-            if(loadingPcsMessage && loadingPcsMessage.parentNode === playerCharacterListUl) { // Ensure it's the correct loading message
+            if(loadingPcsMessage && loadingPcsMessage.parentNode === playerCharacterListUl) { 
                 loadingPcsMessage.style.display = 'none'; 
             }
             return;
         }
 
         pcs.forEach(pc => {
-            if (!pc || !pc.name || !pc._id) {
+            if (!pc || !pc.name || !pc._id) { 
                 console.warn("Skipping PC in list due to missing name or ID:", pc);
                 return;
             }
@@ -132,12 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const pcActionButton = document.createElement('button');
             pcActionButton.classList.add('jrpg-button', 'jrpg-button-small', 'pc-action-submit-button');
-            pcActionButton.textContent = `Submit Action`; // Simpler button text
-            pcActionButton.dataset.pcName = escapeForHtml(pc.name); // Store pc.name with the button
+            pcActionButton.textContent = `Submit Action`; 
+            pcActionButton.dataset.pcName = escapeForHtml(pc.name); 
 
             pcActionButton.addEventListener('click', () => {
                 const actionText = pcActionTextarea.value.trim();
-                const charName = pcActionButton.dataset.pcName; // Get pcName from button's dataset
+                const charName = pcActionButton.dataset.pcName; 
                 if (actionText) {
                     const narrationForNpcs = `Player Action - ${charName}: ${actionText}`;
                     
@@ -299,13 +302,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleSceneStartOrNarration(isInitialNarration = false) {
         const narrationInput = (isInitialNarration ? sceneDescriptionTextarea.value : ongoingNarrationTextarea.value).trim();
-        // Check if there are NPCs selected or loaded to interact with.
-        // Allow scene start even with no NPCs if some PCs are present (though NPCs won't react yet).
         if (sceneParticipantNpcs.length === 0 && selectedNpcIdsForScene.length > 0) { 
             alert('Scene NPCs are selected but not loaded. Check console for errors.'); return; 
         }
-        // If NO NPCs were ever selected for the scene, it might still be okay if GMs want to narrate for PCs only.
-        // However, NPC reactions part will be skipped.
+        // Allow scene start if no NPCs are selected, for GM-only narration or PC-to-PC.
+        // if (sceneParticipantNpcs.length === 0 && selectedNpcIdsForScene.length === 0) { 
+        //     alert('No NPCs are part of the scene. Please select NPCs from the dashboard and ensure they load.'); return; 
+        // }
         
         if (!narrationInput) {
             alert(isInitialNarration ? 'Please describe the initial scene before starting.' : 'Please enter some narration or player action.');
@@ -320,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSceneDescriptionDisplay.textContent = `Current Scene: ${escapeForHtml(currentSceneContext.substring(0, 150))}...`;
         updatePresentPlayerCharacters(); 
 
-        if(sceneParticipantNpcs.length > 0) { // Only process NPC logs and reactions if there are NPCs
+        if(sceneParticipantNpcs.length > 0) {
             sceneParticipantNpcs.forEach(npc => {
                 if (isInitialNarration) { 
                     const logContainer = document.getElementById(`chat-log-${npc._id}`);
@@ -337,7 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             console.log("Scene started/updated without any active NPCs to react.");
         }
-
 
         if (isInitialNarration) sceneDescriptionTextarea.value = ""; 
         ongoingNarrationTextarea.value = ""; 
