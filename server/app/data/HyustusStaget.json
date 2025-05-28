@@ -1,4 +1,5 @@
 {
+    "type": "npc",
     "name": "Hyustus Staget",
     "race": "Human",
     "class": "Captain of the Guard, Dock Ward",
@@ -8,7 +9,7 @@
     "ideals": "Knowledge is the surest weapon against tyranny. Truth must be preserved, even when painful.",
     "bonds": "Sworn to the Harpers and their cause. Seeks to dismantle the Cult of the Dragon before it plunges the world into darkness.",
     "flaws": "Tends to shoulder burdens alone. Hesitates to endanger others even when their help is vital. Harbors guilt from past failures.",
-    "backstory": "Born in Waterdeep, an uptight man who helps keep the peace in the Dock Ward. Every shopkeeper, guild member. innkeeper. and tavern keeper in the Dock Ward knows him, and most respect him regard less of their opinions of the City Watch in general. ",
+    "backstory": "Born in Waterdeep, an uptight man who helps keep the peace in the Dock Ward. Every shopkeeper, guild member. innkeeper. and tavern keeper in the Dock Ward knows him, and most respect him regard less of their opinions of the City Watch in general.",
     "motivations": "To expose the Cult’s structure, identify its leaders, and stop the rise of Tiamat. Believes the heroes of the age must be guided, trained, and protected.",
     "speech_patterns": "Speaks with quiet precision. Rarely wastes words. Often pauses before answering, as if considering five answers and choosing the most instructive.",
     "mannerisms": "Strokes his chin while thinking. When anxious, fingers the edge of his Harper pin. Keeps a journal within arm's reach at all times.",

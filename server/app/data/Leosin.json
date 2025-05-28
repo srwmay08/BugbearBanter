@@ -1,4 +1,5 @@
 {
+    "type": "npc",
     "name": "Leosin Erlanthar",
     "race": "Half-Elf",
     "class": "Monk",
@@ -15,5 +16,5 @@
     "past_situation": "Captured by the Cult while investigating their caravans. Endured torture to protect secrets and gather intelligence, eventually rescued by adventurers.",
     "current_situation": "Reestablishing Harper networks, advising key allies, and keeping tabs on cult movements along the Sword Coast. Sees the player characters as crucial pawns—and possibly queens—in the war to come.",
     "relationships_with_pcs": "Initially reserved, but grows to trust players who show moral clarity and discipline. Offers subtle guidance, rarely commands. Honors their choices even when he disagrees."
-}
+  }
 

@@ -3,32 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bugbear Banter - Active Scene</title>
-    <link rel="stylesheet" href="/static/css/style.css"> <link rel="stylesheet" href="/static/css/scene.css"> <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <title>Bugbear Banter - Scene</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/scene.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="page-container scene-page-container">
-       <!-- <header class="jrpg-header">
-            <h1>Active Scene</h1>
-            
-        </header>-->
+        <header class="jrpg-header">
+            <h1>Scene in Progress</h1>
+            <p id="current-scene-description-display">Current Scene: Not yet started.</p>
+        </header>
 
         <main class="scene-main-content">
-            <div id="npc-interaction-area" class="npc-interaction-grid">
-                <p class="loading-npcs-message">Loading participant interfaces...</p>
+            <div class="jrpg-box scene-setup-area">
+                <h2>Initial Scene Description & Narration</h2>
+                <textarea id="scene-description-textarea" class="jrpg-textarea" rows="4" placeholder="Describe the initial scene, setting, and any opening narration..."></textarea>
+                <button id="start-scene-button" class="jrpg-button">Start Scene / Narrate</button>
             </div>
 
-            <div class="scene-input-area jrpg-box">
-                <p id="current-scene-description-display">Scene context will appear here...</p>
-                <h2>Scene Setup & Narration</h2>
-                <textarea id="scene-description-textarea" class="jrpg-textarea" rows="5" placeholder="Describe the current situation, setting, or narrate an event..."></textarea>
-                <button id="start-scene-button" class="jrpg-button">Initiate Scene / Narrate</button>
+            <div class="jrpg-box ongoing-narration-area">
+                <h2>Ongoing Narration / Player Action</h2>
+                <textarea id="ongoing-narration-textarea" class="jrpg-textarea" rows="2" placeholder="Enter player actions, dialogue, or minor scene changes here..."></textarea>
+                <button id="submit-ongoing-narration-button" class="jrpg-button jrpg-button-small">Submit Narration</button>
+            </div>
+
+            <div class="jrpg-box player-characters-selection">
+                <h2>Player Characters Present</h2>
+                <ul id="player-character-list">
+                    <!- Player characters will be dynamically inserted here by scene.js -->
+                    <p id="loading-pcs-message">Loading player characters...</p>
+                </ul>
+            </div>
+
+            <div id="npc-interaction-area" class="npc-interaction-grid">
+                <p class="loading-npcs-message">Loading NPCs for the scene...</p>
+                <!-NPC cards will be dynamically inserted here -->
             </div>
         </main>
 
         <footer class="jrpg-footer">
-            <a href="/" class="jrpg-button-small">Back to NPC Selection</a>
-            <p>Bugbear Banter - Scene Mode</p>
+            <p>Bugbear Banter</p>
+            <a href="/dashboard" class="jrpg-button-small">Back to Dashboard</a>
         </footer>
     </div>
     <script src="/static/js/scene.js"></script>
