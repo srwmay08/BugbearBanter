@@ -240,3 +240,39 @@
 .npc-chat-log::-webkit-scrollbar-thumb:hover {
     background: #6a6292;
 }
+
+/* static/css/scene.css */
+/* ... (existing scene.css styles) ... */
+
+.player-character-item {
+    border: 1px solid #4a4166; /* Softer border from style.css */
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background-color: #353148; /* Slightly different from NPC cards */
+}
+
+.pc-header {
+    margin-bottom: 8px;
+}
+
+.pc-header label {
+    font-weight: bold;
+    color: #e0d090; /* JRPG gold text */
+}
+
+.pc-action-area {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #4a4166;
+}
+
+.pc-action-input { /* Extends jrpg-textarea */
+    width: calc(100% - 22px); /* Account for padding */
+    min-height: 40px;
+    margin-bottom: 8px;
+}
+
+.pc-action-submit-button { /* Extends jrpg-button-small */
+    width: 100%;
+}
