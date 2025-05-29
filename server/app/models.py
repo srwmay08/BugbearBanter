@@ -95,3 +95,4 @@ class NPC:
             data["source_file"] = self.source_file
         # ... include other fields from your JSON ...
         return data
+# Remove the merge conflict markers that were here

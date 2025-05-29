@@ -72,15 +72,17 @@ def create_app(config_name='default'):
             abort(404)
         return send_from_directory(app.static_folder, 'login.html')
     
-    @app.route('/npc-selector', endpoint='npc_selector_page_route') 
-    @login_required 
+
+    @app.route('/npc-selector', endpoint='npc_selector_page_route')
+    @login_required
     def npc_selector_page():
         absolute_static_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), app.static_folder))
-        target_path = os.path.join(absolute_static_folder, 'index.html') 
+        target_path = os.path.join(absolute_static_folder, 'index.html') # <--- This is serving index.html
         if not os.path.exists(target_path):
             app_context.logger.error(f"NPC selector (index.html) not found at: {target_path}")
             abort(404)
-        return send_from_directory(app.static_folder, 'index.html')
+        return send_from_directory(app.static_folder, 'index.html') # <--- Also serving index.html
+
 
     @app.route('/scene', endpoint='scene_page_route') 
     @login_required 
@@ -110,3 +112,4 @@ def create_app(config_name='default'):
     login_manager.login_message_category = "info"
 
     return app
+
