@@ -1,5 +1,5 @@
 {
-    "type": "npc",
+    "character_type": "npc",
     "name": "Hyustus Staget",
     "race": "Human",
     "class": "Captain of the Guard, Dock Ward",

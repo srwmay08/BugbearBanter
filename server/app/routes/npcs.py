@@ -1,96 +1,88 @@
+# srwmay08/bugbearbanter/BugbearBanter-cf73d42aed67696601941e44943cc5db45c8e493/server/app/routes/npcs.py
 # app/routes/npcs.py
 from flask import Blueprint, jsonify, current_app, request, abort
-from ..utils.db import mongo # Assuming this is how you access your MongoDB instance
-from flask_login import login_required, current_user # Ensure current_user is imported
-import json # Ensure json is imported
-import uuid # Keep for your upload route
+from ..utils.db import mongo
+from flask_login import login_required, current_user
+import json
+import uuid
 from bson import ObjectId # For converting string ID to MongoDB ObjectId if necessary
+from datetime import datetime # For timestamping memories, though actual creation is in service
 
 npcs_bp = Blueprint('npcs', __name__)
-NPC_COLLECTION_NAME = 'npcs' # This collection stores both PCs and NPCs
+NPC_COLLECTION_NAME = 'npcs'
 USERS_COLLECTION_NAME = 'users'
 
 @npcs_bp.route('', methods=['GET'])
 @login_required
-def get_combined_npcs(): # Kept your original function name
-    """
-    API endpoint to fetch all relevant characters (PCs and NPCs).
-    It fetches characters that are default (user_id is None or does not exist)
-    OR belong to the currently logged-in user.
-    The 'type' field (pc/npc) from MongoDB is crucial for frontend filtering.
-    """
-    # CRITICAL FIX: Use current_user
-    user_id_for_log = current_user.email if hasattr(current_user, 'email') else current_user.id
-    
-    query_conditions = [
-        {"user_id": None}, 
-        {"user_id": {"$exists": False}} 
-    ]
-
-    current_user_actual_id_str = current_user.get_id() # This is usually a string
-
-    # Add condition for user-specific characters
-    # User_id in the database could be ObjectId or string. Be flexible or ensure consistency.
-    # For this example, let's assume user_id in npcs collection could be string or ObjectId.
+def get_combined_npcs():
     try:
-        query_conditions.append({"user_id": ObjectId(current_user_actual_id_str)})
-    except Exception: # If current_user_actual_id_str is not a valid ObjectId string
-        query_conditions.append({"user_id": current_user_actual_id_str})
-            
-    final_query = {"$or": query_conditions}
+        npc_collection = mongo.db[NPC_COLLECTION_NAME]
+        npcs_list = []
+        processed_ids = set()
 
-    try:
-        character_collection = mongo.db[NPC_COLLECTION_NAME]
-        characters_cursor = character_collection.find(final_query)
-        
-        characters_list = []
-        for char_doc in characters_cursor:
-            char_doc["_id"] = str(char_doc["_id"]) 
-            
-            if 'user_id' in char_doc and char_doc['user_id'] is not None:
-                char_doc['user_id'] = str(char_doc['user_id'])
-            
-            # The 'type' field (e.g., "pc" or "npc") is direct from the DB document.
-            # load_npc_data.py is responsible for saving this 'type' field correctly.
-            characters_list.append(char_doc)
-        
-        current_app.logger.info(f"API: Returning {len(characters_list)} characters (PCs & NPCs) for user {user_id_for_log}. Query: {final_query}")
-        return jsonify(characters_list), 200
+        # Fetch global/default NPCs (user_id does not exist or is explicitly null)
+        global_npcs_cursor = npc_collection.find({"$or": [{"user_id": {"$exists": False}}, {"user_id": None}]})
+        for npc in global_npcs_cursor:
+            npc_id_str = str(npc['_id'])
+            npc['_id'] = npc_id_str
+            if npc.get('user_id'):
+                 npc['user_id'] = str(npc['user_id'])
+            if 'memories' not in npc: # Ensure memories field exists for frontend if ever needed, though primarily backend
+                npc['memories'] = []
+            if 'character_type' not in npc: # Ensure character_type exists
+                npc['character_type'] = 'NPC' # Default to NPC if not specified
+            npcs_list.append(npc)
+            processed_ids.add(npc_id_str)
 
+        if current_user and hasattr(current_user, 'get_id') and current_user.get_id():
+            user_specific_npcs_cursor = npc_collection.find({"user_id": current_user.get_id()})
+            for npc in user_specific_npcs_cursor:
+                npc_id_str = str(npc['_id'])
+                if npc_id_str not in processed_ids:
+                    npc['_id'] = npc_id_str
+                    if 'user_id' in npc:
+                        npc['user_id'] = str(npc['user_id'])
+                    if 'memories' not in npc: # Ensure memories field exists
+                        npc['memories'] = []
+                    if 'character_type' not in npc: # Ensure character_type exists
+                        npc['character_type'] = 'NPC' # Default to NPC if not specified
+                    npcs_list.append(npc)
+                    processed_ids.add(npc_id_str)
+
+        current_app.logger.info(f"Returning {len(npcs_list)} NPCs/Characters for user {current_user.email}.")
+        return jsonify(npcs_list), 200
     except Exception as e:
-        current_app.logger.error(f"API Error fetching characters for user {user_id_for_log}: {e}", exc_info=True)
-        return jsonify({"error": "Failed to fetch characters", "details": str(e)}), 500
+        current_app.logger.error(f"Error fetching combined NPCs/Characters: {e}", exc_info=True)
+        return jsonify({"error": "Failed to fetch characters.", "details": str(e)}), 500
 
 @npcs_bp.route('/<npc_id_str>', methods=['GET'])
 @login_required
 def get_single_npc(npc_id_str):
     try:
         npc_collection = mongo.db[NPC_COLLECTION_NAME]
-        npc_data = None
-        
-        if ObjectId.is_valid(npc_id_str):
+
+        npc_data = npc_collection.find_one({"_id": npc_id_str})
+
+        if not npc_data and ObjectId.is_valid(npc_id_str):
             npc_data = npc_collection.find_one({"_id": ObjectId(npc_id_str)})
-        if not npc_data: # Fallback or if ID is not an ObjectId format
-            npc_data = npc_collection.find_one({"_id": npc_id_str})
 
         if not npc_data:
             return jsonify({"error": "Character not found"}), 404
 
         is_global = not npc_data.get("user_id")
-        
-        user_id_in_doc = npc_data.get("user_id")
-        current_user_id_str = current_user.get_id()
-        is_owner = False
-        if user_id_in_doc is not None:
-            is_owner = str(user_id_in_doc) == current_user_id_str
-        
+        is_owner = npc_data.get("user_id") == current_user.get_id()
+
         if not (is_global or is_owner):
             return jsonify({"error": "Forbidden: You do not have access to this character"}), 403
-        
-        npc_data['_id'] = str(npc_data['_id']) 
+
+        npc_data['_id'] = str(npc_data['_id'])
         if 'user_id' in npc_data and npc_data['user_id']:
             npc_data['user_id'] = str(npc_data['user_id'])
-            
+        if 'memories' not in npc_data: # Ensure memories field exists
+            npc_data['memories'] = []
+        if 'character_type' not in npc_data: # Ensure character_type exists
+            npc_data['character_type'] = 'NPC' # Default to NPC
+
         return jsonify(npc_data), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching single character {npc_id_str}: {e}", exc_info=True)
@@ -99,90 +91,75 @@ def get_single_npc(npc_id_str):
 
 @npcs_bp.route('/upload', methods=['POST'])
 @login_required
-def upload_npc_route(): # Your original function name was upload_npc_file
+def upload_npc_route():
     if 'npc_file' not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
-    
+
     file = request.files['npc_file']
     if file.filename == '':
         return jsonify({"error": "No file selected for uploading"}), 400
 
     if file and file.filename.endswith('.json'):
         try:
-            # CRITICAL FIX: Use file.stream for a file opened in binary mode by Flask
-            uploaded_data = json.load(file.stream) 
-            
-            if not isinstance(uploaded_data, dict) or 'name' not in uploaded_data:
+            npc_data_raw = json.load(file.stream)
+
+            if not isinstance(npc_data_raw, dict) or 'name' not in npc_data_raw:
                 return jsonify({"error": "Invalid JSON format or missing character name."}), 400
 
             npc_collection = mongo.db[NPC_COLLECTION_NAME]
             users_collection = mongo.db[USERS_COLLECTION_NAME]
-            
-            char_doc = uploaded_data.copy() # Make a copy to modify
+            npc_id = str(uuid.uuid4())
 
-            # Handle _id: if present in JSON use it, otherwise generate.
-            if "_id" in char_doc and isinstance(char_doc["_id"], str) and char_doc["_id"]:
-                char_id_str = char_doc["_id"]
-            else:
-                char_id_str = str(uuid.uuid4())
-            char_doc['_id'] = char_id_str
-            
-            # Assign user_id
-            char_doc['user_id'] = current_user.get_id() 
+            npc_doc = {
+                '_id': npc_id,
+                'user_id': current_user.get_id(),
+                'name': npc_data_raw.get('name'),
+                'character_type': npc_data_raw.get('character_type', 'NPC'), # Added character_type
+                'race': npc_data_raw.get('race'),
+                'class': npc_data_raw.get('class'),
+                'alignment': npc_data_raw.get('alignment'),
+                'age': npc_data_raw.get('age'),
+                'personality_traits': npc_data_raw.get('personality_traits'),
+                'ideals': npc_data_raw.get('ideals'),
+                'bonds': npc_data_raw.get('bonds'),
+                'flaws': npc_data_raw.get('flaws'),
+                'backstory': npc_data_raw.get('backstory'),
+                'motivations': npc_data_raw.get('motivations'),
+                'speech_patterns': npc_data_raw.get('speech_patterns'),
+                'mannerisms': npc_data_raw.get('mannerisms'),
+                'past_situation': npc_data_raw.get('past_situation'),
+                'current_situation': npc_data_raw.get('current_situation'),
+                'relationships_with_pcs': npc_data_raw.get('relationships_with_pcs'),
+                'appearance': npc_data_raw.get('appearance', 'No description available.'),
+                'source_file': file.filename,
+                'memories': [] # Initialize memories as an empty list
+            }
+            npc_doc_cleaned = {k: v for k, v in npc_doc.items() if v is not None}
 
-            # Handle 'type': must be in JSON, default if not or invalid.
-            if 'type' not in char_doc or char_doc['type'] not in ['pc', 'npc']:
-                current_app.logger.warn(
-                    f"Uploaded character '{char_doc.get('name')}' by {current_user.id} (file: {file.filename}) "
-                    f"missing valid 'type' (had: '{char_doc.get('type')}'). Defaulting to 'npc'."
-                )
-                char_doc['type'] = 'npc'
-            
-            char_doc['source_file'] = file.filename
+            npc_collection.insert_one(npc_doc_cleaned)
 
-            # Upsert logic based on _id
-            existing_char = npc_collection.find_one({"_id": char_doc['_id']})
-            message = ""
-            status_code = 200
+            users_collection.update_one(
+                {"_id": current_user.get_id()},
+                {"$addToSet": {"npc_ids": npc_id}}
+            )
+            if hasattr(current_user, 'npc_ids') and isinstance(current_user.npc_ids, list) and npc_id not in current_user.npc_ids:
+                current_user.npc_ids.append(npc_id)
 
-            if existing_char:
-                if str(existing_char.get("user_id")) == str(current_user.get_id()): # It's theirs, update
-                    npc_collection.replace_one({"_id": char_doc['_id']}, char_doc)
-                    message = f"Character '{char_doc.get('name')}' updated successfully."
-                    current_app.logger.info(f"Character {char_doc['_id']} updated by user {current_user.id}.")
-                elif existing_char.get("user_id") is None: # Default/global
-                    return jsonify({"error": f"A default character with ID '{char_doc['_id']}' already exists. Cannot overwrite."}), 409
-                else: # Belongs to another user
-                    return jsonify({"error": f"A character with ID '{char_doc['_id']}' exists and belongs to another user."}), 409
-            else: # New character, insert
-                npc_collection.insert_one(char_doc)
-                message = f"Character '{char_doc.get('name')}' uploaded successfully."
-                status_code = 201
-                current_app.logger.info(f"Character {char_doc['_id']} uploaded by user {current_user.id} with type '{char_doc['type']}'.")
-                
-                # Add character ID to user's list (assuming user._id is ObjectId compatible string)
-                try:
-                    users_collection.update_one(
-                        {"_id": ObjectId(current_user.get_id())}, 
-                        {"$addToSet": {"character_ids": char_id_str}} # Or "npc_ids"
-                    )
-                except Exception as e_user_update:
-                     current_app.logger.error(f"Failed to add char_id to user list for {current_user.id}: {e_user_update}")
+            created_npc = npc_collection.find_one({"_id": npc_id})
+            if created_npc:
+                 created_npc['_id'] = str(created_npc['_id'])
+                 if 'user_id' in created_npc:
+                     created_npc['user_id'] = str(created_npc['user_id'])
+                 if 'character_type' not in created_npc: # Ensure character_type is present for response
+                     created_npc['character_type'] = npc_doc_cleaned.get('character_type', 'NPC')
 
 
-            final_char_doc = npc_collection.find_one({"_id": char_id_str})
-            if final_char_doc:
-                 final_char_doc['_id'] = str(final_char_doc['_id'])
-                 if 'user_id' in final_char_doc and final_char_doc['user_id'] is not None:
-                     final_char_doc['user_id'] = str(final_char_doc['user_id'])
-
-            return jsonify({"message": message, "character": final_char_doc}), status_code
+            return jsonify({"message": f"Character '{created_npc.get('name')}' uploaded successfully.", "npc": created_npc}), 201
 
         except json.JSONDecodeError:
-            current_app.logger.warn(f"Invalid JSON during upload by user {current_user.id}, file: {file.filename}")
-            return jsonify({"error": "Invalid JSON file provided."}), 400
+            return jsonify({"error": "Invalid JSON file."}), 400
         except Exception as e:
-            current_app.logger.error(f"Error uploading character for user {current_user.id}: {e}", exc_info=True)
+            current_app.logger.error(f"Error uploading character: {e}", exc_info=True)
             return jsonify({"error": "Failed to upload character.", "details": str(e)}), 500
     else:
         return jsonify({"error": "Invalid file type. Only .json files are allowed."}), 400
@@ -192,44 +169,54 @@ def upload_npc_route(): # Your original function name was upload_npc_file
 def update_npc(npc_id_str):
     try:
         npc_collection = mongo.db[NPC_COLLECTION_NAME]
-        data_to_update = request.get_json()
-        if not data_to_update:
+        npc_data_to_update = request.get_json()
+        if not npc_data_to_update:
             return jsonify({"error": "No update data provided"}), 400
 
-        query_filter_id = ObjectId(npc_id_str) if ObjectId.is_valid(npc_id_str) else npc_id_str
-        
-        # Ensure user is trying to update their own character
-        # Note: current_user.get_id() returns a string. If user_id in DB is ObjectId, convert for query.
-        user_id_for_query = ObjectId(current_user.get_id()) if ObjectId.is_valid(current_user.get_id()) else current_user.get_id()
+        query_id_str = npc_id_str
 
-        query_filter = {"_id": query_filter_id, "user_id": user_id_for_query}
-        
-        existing_npc = npc_collection.find_one(query_filter)
+        existing_npc = npc_collection.find_one({"_id": query_id_str})
+
         if not existing_npc:
-             # Check if it's a global NPC or belongs to someone else
-            check_npc = npc_collection.find_one({"_id": query_filter_id})
-            if check_npc and not check_npc.get("user_id"):
-                return jsonify({"error": "Forbidden: Default characters cannot be modified."}), 403
-            return jsonify({"error": "Character not found or you don't have permission to edit it"}), 404
+            return jsonify({"error": "Character not found"}), 404
 
-        data_to_update.pop('_id', None) # Cannot change _id
-        data_to_update.pop('user_id', None) # Cannot change owner
+        if not existing_npc.get("user_id") or existing_npc.get("user_id") != current_user.get_id():
+            return jsonify({"error": "Forbidden: You can only update your own characters"}), 403
 
-        if not data_to_update:
-            return jsonify({"error": "No valid fields provided for update after stripping protected fields."}), 400
-
-        result = npc_collection.update_one(query_filter, {"$set": data_to_update})
+        # User cannot change _id, user_id.
+        # character_type could be updatable if desired, add it to npc_data_to_update if so.
+        # For now, we assume character_type is set at creation. If it needs to be editable:
+        # if 'character_type' in npc_data_to_update and npc_data_to_update['character_type'] not in ['PC', 'NPC']:
+        #     return jsonify({"error": "Invalid character_type. Must be 'PC' or 'NPC'."}), 400
         
-        if result.modified_count == 0 and result.matched_count > 0:
-             return jsonify({"message": "Character data was the same, no changes made.", "_id": npc_id_str}), 200
+        update_payload = {k: v for k, v in npc_data_to_update.items() if k not in ['_id', 'user_id']}
 
-        updated_char = npc_collection.find_one({"_id": query_filter_id})
-        if updated_char:
-            updated_char['_id'] = str(updated_char['_id'])
-            if 'user_id' in updated_char and updated_char['user_id']: 
-                updated_char['user_id'] = str(updated_char['user_id'])
-        
-        return jsonify({"message": "Character updated successfully", "character": updated_char}), 200
+
+        result = npc_collection.update_one(
+            {"_id": query_id_str, "user_id": current_user.get_id()},
+            {"$set": update_payload}
+        )
+
+        if result.matched_count == 0:
+            return jsonify({"error": "Character not found or update forbidden (match failed)"}), 404
+        if result.modified_count == 0:
+            unchanged_npc = npc_collection.find_one({"_id": query_id_str})
+            if unchanged_npc:
+                unchanged_npc['_id'] = str(unchanged_npc['_id'])
+                if 'user_id' in unchanged_npc: unchanged_npc['user_id'] = str(unchanged_npc['user_id'])
+                if 'memories' not in unchanged_npc: unchanged_npc['memories'] = []
+                if 'character_type' not in unchanged_npc: unchanged_npc['character_type'] = 'NPC'
+                return jsonify({"message": "Character data was the same, no changes made.", "npc": unchanged_npc}), 200
+            else:
+                return jsonify({"error": "Character found but could not retrieve after no-modification update."}), 500
+
+        updated_npc = npc_collection.find_one({"_id": query_id_str})
+        updated_npc['_id'] = str(updated_npc['_id'])
+        if 'user_id' in updated_npc: updated_npc['user_id'] = str(updated_npc['user_id'])
+        if 'memories' not in updated_npc: updated_npc['memories'] = [] # Ensure it's present
+        if 'character_type' not in updated_npc: updated_npc['character_type'] = 'NPC' # Ensure it's present
+
+        return jsonify({"message": "Character updated successfully", "npc": updated_npc}), 200
     except Exception as e:
         current_app.logger.error(f"Error updating character {npc_id_str}: {e}", exc_info=True)
         return jsonify({"error": "Failed to update character."}), 500
@@ -241,35 +228,28 @@ def delete_npc(npc_id_str):
         npc_collection = mongo.db[NPC_COLLECTION_NAME]
         users_collection = mongo.db[USERS_COLLECTION_NAME]
 
-        query_filter_id = ObjectId(npc_id_str) if ObjectId.is_valid(npc_id_str) else npc_id_str
-        user_id_for_query = ObjectId(current_user.get_id()) if ObjectId.is_valid(current_user.get_id()) else current_user.get_id()
+        query_id_str = npc_id_str
 
-        npc_to_delete = npc_collection.find_one({"_id": query_filter_id, "user_id": user_id_for_query})
-        
+        npc_to_delete = npc_collection.find_one({"_id": query_id_str, "user_id": current_user.get_id()})
+
         if not npc_to_delete:
-            check_npc = npc_collection.find_one({"_id": query_filter_id})
-            if check_npc and not check_npc.get("user_id"): # It's a global/default NPC
-                return jsonify({"error": "Forbidden: Default characters cannot be deleted."}), 403
+            is_global_check = npc_collection.find_one({"_id": query_id_str, "$or": [{"user_id": {"$exists": False}}, {"user_id": None}]})
+            if is_global_check:
+                return jsonify({"error": "Forbidden: Default characters cannot be deleted by users."}), 403
             return jsonify({"error": "Character not found or you do not have permission to delete it"}), 404
 
-        result = npc_collection.delete_one({"_id": query_filter_id, "user_id": user_id_for_query})
+        result = npc_collection.delete_one({"_id": query_id_str, "user_id": current_user.get_id()})
 
         if result.deleted_count == 0:
-            return jsonify({"error": "Character not found during delete operation or delete failed"}), 404
-        
-        # Remove character ID from user's list (e.g., 'character_ids' or 'npc_ids')
+            return jsonify({"error": "Character not found or delete failed (no document deleted)"}), 404
+
         users_collection.update_one(
-            {"_id": user_id_for_query}, # Assuming user _id for query is same format as in users collection
-            {"$pull": {"character_ids": npc_id_str}} # Adjust field name if needed
+            {"_id": current_user.get_id()},
+            {"$pull": {"npc_ids": npc_id_str}}
         )
-        # Also update current_user object in session if it caches this list
-        if hasattr(current_user, 'character_ids') and isinstance(current_user.character_ids, list) and npc_id_str in current_user.character_ids:
-            current_user.character_ids.remove(npc_id_str)
-        elif hasattr(current_user, 'npc_ids') and isinstance(current_user.npc_ids, list) and npc_id_str in current_user.npc_ids:
+        if hasattr(current_user, 'npc_ids') and isinstance(current_user.npc_ids, list) and npc_id_str in current_user.npc_ids:
             current_user.npc_ids.remove(npc_id_str)
 
-
-        current_app.logger.info(f"Character {npc_id_str} deleted by user {current_user.id}")
         return jsonify({"message": f"Character with ID {npc_id_str} deleted successfully"}), 200
     except Exception as e:
         current_app.logger.error(f"Error deleting character {npc_id_str}: {e}", exc_info=True)

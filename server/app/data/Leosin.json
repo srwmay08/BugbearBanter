@@ -1,5 +1,5 @@
 {
-    "type": "npc",
+    "character_type": "npc",
     "name": "Leosin Erlanthar",
     "race": "Half-Elf",
     "class": "Monk",

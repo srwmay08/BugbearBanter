@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bugbear Banter - Dashboard</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/dashboard.css"> 
+    <link rel="stylesheet" href="/static/css/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -15,24 +15,33 @@
             <p id="welcome-message">Welcome!</p>
             <button id="logout-button" class="jrpg-button-small">Logout</button>
         </header>
-    
+
         <main class="dashboard-main-content">
             <div class="jrpg-box npc-upload-area">
-                <h2>Upload NPC JSON File</h2>
+                <h2>Upload Character JSON File</h2>
                 <form id="npc-upload-form">
                     <input type="file" id="npc-file-input" accept=".json" required>
-                    <button type="submit" class="jrpg-button">Upload NPC</button>
+                    <button type="submit" class="jrpg-button">Upload Character</button>
                 </form>
                 <p id="upload-message" class="message"></p>
+                <p class="info-text">Your JSON file can include a "character_type" field set to "PC" or "NPC". If omitted, it defaults to "NPC".</p>
             </div>
-    
+
+            <div class="jrpg-box user-pcs-area">
+                <h2>Your PCs</h2>
+                <div id="user-pc-list">
+                    <p>Loading your PCs...</p>
+                </div>
+            </div>
+
             <div class="jrpg-box user-npcs-area">
                 <h2>Your NPCs</h2>
                 <div id="user-npc-list">
                     <p>Loading your NPCs...</p>
                 </div>
-                <button id="go-to-scene-setup" class="jrpg-button">Go to Scene Setup</button>
             </div>
+            <button id="go-to-scene-setup" class="jrpg-button">Go to Scene Setup</button>
+
 
             <div class="jrpg-box world-info-area">
                 <h2>World Information</h2>
@@ -40,15 +49,15 @@
                 <div id="world-info-display">
                     <p>Click the button to load world information.</p>
                 </div>
-                
+
             </div>
 <div id="edit-npc-modal" class="modal">
         <div class="modal-content jrpg-box">
             <span class="close-modal-button" id="cancel-edit-npc">&times;</span>
-            <h2>Edit NPC</h2>
+            <h2>Edit Character</h2>
             <form id="edit-npc-form">
                 <input type="hidden" id="edit-npc-id" name="_id">
-                
+
                 <div class="form-group">
                     <label for="edit-name">Name:</label>
                     <input type="text" id="edit-name" name="name" class="jrpg-input" required>
@@ -104,12 +113,12 @@
 
     <div id="world-item-modal" class="modal">
         <div class="modal-content jrpg-box">
-            <span class="close-modal-button" id="cancel-world-item">&times;</span>
+            <span class="close-modal-button" id="cancel-world-item-modal-button">&times;</span>
             <h2 id="world-item-modal-title">Manage World Item</h2>
             <form id="world-item-form">
-                <input type="hidden" id="edit-world-item-id" name="_id">
-                <input type="hidden" id="edit-world-item-type" name="item_type_hidden"> 
-                
+                <input type="hidden" id="edit-world-item-id-field" name="_id">
+                <input type="hidden" id="edit-world-item-type-field" name="item_type_hidden">
+
                 <div id="world-item-fields-container">
                     </div>
 
@@ -119,11 +128,11 @@
     </div>
 
             </main>
-    
+
         <footer class="jrpg-footer">
             <p>Bugbear Banter</p>
         </footer>
     </div>
-    <script src="/static/js/dashboard.js"></script> 
+    <script src="/static/js/dashboard.js"></script>
 </body>
 </html>

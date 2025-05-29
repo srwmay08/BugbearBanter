@@ -1,219 +1,229 @@
+// srwmay08/bugbearbanter/BugbearBanter-cf73d42aed67696601941e44943cc5db45c8e493/server/static/js/scene.js
 // static/js/scene.js
 document.addEventListener('DOMContentLoaded', () => {
     console.log('Scene.js: DOMContentLoaded');
 
-    const npcInteractionArea = document.getElementById('npc-interaction-area');
+    const pcDisplayArea = document.getElementById('pc-display-area'); // For PCs
+    const npcInteractionArea = document.getElementById('npc-interaction-area'); // For NPCs
     const sceneDescriptionTextarea = document.getElementById('scene-description-textarea');
     const startSceneButton = document.getElementById('start-scene-button');
     const currentSceneDescriptionDisplay = document.getElementById('current-scene-description-display');
-    const ongoingNarrationTextarea = document.getElementById('ongoing-narration-textarea');
-    const submitOngoingNarrationButton = document.getElementById('submit-ongoing-narration-button');
-    const playerCharacterListUl = document.getElementById('player-character-list');
-    const loadingPcsMessage = document.getElementById('loading-pcs-message');
-    let loadingNpcsMessageEl = npcInteractionArea ? npcInteractionArea.querySelector('.loading-npcs-message') : null;
+    let loadingNpcsMessage = npcInteractionArea ? npcInteractionArea.querySelector('.loading-npcs-message') : null;
+    if (pcDisplayArea && pcDisplayArea.querySelector('p')) { // Initial placeholder for PCs
+        pcDisplayArea.querySelector('p').textContent = 'Loading PCs...';
+    }
 
-    let sceneParticipantNpcs = [];
+
+    let playerCharacters = []; // Array for PC objects
+    let sceneNpcs = []; // Array for NPC objects (was sceneParticipants)
     let conversationHistory = {};
     let currentSceneContext = "";
-    let presentPlayerCharacters = []; // Array of PC names that are checked as present
 
     function escapeForHtml(unsafe) {
-        if (unsafe === null || typeof unsafe === 'undefined') return '';
-        return unsafe.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/`/g, "&#96;");
+        if (unsafe === null || typeof unsafe === 'undefined') {
+            return '';
+        }
+        return unsafe
+             .toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;")
+             .replace(/`/g, "&#96;");
     }
 
-    if (!npcInteractionArea || !sceneDescriptionTextarea || !startSceneButton || !currentSceneDescriptionDisplay || !ongoingNarrationTextarea || !submitOngoingNarrationButton || !playerCharacterListUl) {
-        console.error('CRITICAL: Essential UI elements missing from scene.html!');
-        if(npcInteractionArea) npcInteractionArea.innerHTML = '<p style="color:red; text-align:center;">Error: UI setup incomplete.</p>';
+    console.log('Scene.js: Initial checks for UI elements.');
+    if (!npcInteractionArea || !sceneDescriptionTextarea || !startSceneButton || !currentSceneDescriptionDisplay || !pcDisplayArea) {
+        console.error('CRITICAL: One or more essential UI elements for the scene page are missing from scene.html!');
+        if(npcInteractionArea) {
+            npcInteractionArea.innerHTML = '<p style="color:red; text-align:center;">Error: UI setup incomplete. Please check console and HTML structure.</p>';
+        }
+        if(pcDisplayArea){
+            pcDisplayArea.innerHTML = '<p style="color:red; text-align:center;">Error: PC Display Area missing.</p>';
+        }
         return;
     }
-    if (!loadingNpcsMessageEl && npcInteractionArea) {
-        loadingNpcsMessageEl = npcInteractionArea.querySelector('.loading-npcs-message');
-    }
+
 
     const urlParams = new URLSearchParams(window.location.search);
-    const npcIdsParam = urlParams.get('npcs');
-    const selectedNpcIdsForScene = npcIdsParam ? npcIdsParam.split(',') : [];
+    const pcIdsParam = urlParams.get('pc_ids');
+    const npcIdsParam = urlParams.get('npc_ids');
+    const selectedPcIds = pcIdsParam ? pcIdsParam.split(',').filter(id => id) : []; // Filter out empty strings if param is just ","
+    const selectedNpcIds = npcIdsParam ? npcIdsParam.split(',').filter(id => id) : [];
+    console.log('Scene.js: Selected PC IDs from URL:', selectedPcIds);
+    console.log('Scene.js: Selected NPC IDs from URL:', selectedNpcIds);
 
-    if (selectedNpcIdsForScene.length === 0 && loadingNpcsMessageEl) {
-        console.warn('Scene.js: No NPCs selected for the scene (via URL params).');
-        loadingNpcsMessageEl.textContent = 'No NPCs were selected for this scene. Please go back to NPC selection.';
-        // Don't disable start button yet, PCs might still be interacted with, or scene set without NPCs initially
+
+    if (selectedPcIds.length === 0 && selectedNpcIds.length === 0) {
+        console.warn('Scene.js: No characters (PCs or NPCs) selected.');
+        if(loadingNpcsMessage) loadingNpcsMessage.textContent = 'No NPCs were selected for this scene.';
+        else if(npcInteractionArea) npcInteractionArea.innerHTML = '<p>No NPCs were selected for this scene.</p>';
+        if(pcDisplayArea && pcDisplayArea.querySelector('p')) pcDisplayArea.querySelector('p').textContent = 'No PCs were selected for this scene.';
+        if(startSceneButton) startSceneButton.disabled = true;
+        return;
     }
 
-    // Fetch ALL characters (PCs and NPCs)
-    fetch('/api/npcs') 
+    console.log('Scene.js: Fetching /api/npcs (for all characters)...');
+    fetch('/api/npcs')
         .then(response => {
-            if (!response.ok) throw new Error(`HTTP error fetching characters! Status: ${response.status} ${response.statusText}`);
+            console.log('Scene.js: /api/npcs response received.');
+            if (!response.ok) {
+                console.error('Scene.js: HTTP error fetching character list!', response.status, response.statusText);
+                throw new Error(`HTTP error fetching character list! Status: ${response.status} ${response.statusText}`);
+            }
             return response.json();
         })
-        .then(allCharacters => {
-            // *** DEBUGGING: Log raw data from API ***
-            console.log('scene.js: Data received from /api/npcs:', JSON.stringify(allCharacters, null, 2)); 
-
+        .then(allCharacters => { // Renamed from allNpcs
+            console.log('Scene.js: All characters data received:', allCharacters);
             if (!Array.isArray(allCharacters)) {
                 console.error('Scene.js: Fetched character data is not an array!', allCharacters);
-                if(loadingPcsMessage) loadingPcsMessage.textContent = 'Error: Incorrect character data format from server.';
-                if(loadingNpcsMessageEl) loadingNpcsMessageEl.textContent = 'Error: Incorrect character data format.';
+                if(npcInteractionArea) npcInteractionArea.innerHTML = '<p style="color:red;">Error: Incorrect character data format from server.</p>';
                 return;
             }
 
-            const pcs = allCharacters.filter(char => char.type === 'pc');
-            // *** DEBUGGING: Log filtered PCs ***
-            console.log('scene.js: Filtered PCs for list:', JSON.stringify(pcs, null, 2)); 
-            populatePlayerCharacterList(pcs); // Populate PC list first
-
-            // Then, filter for and process NPCs selected for the scene
-            selectedNpcIdsForScene.forEach(id => {
-                // Ensure we only pick NPCs for scene participation, undefined type defaults to NPC for backward compatibility
-                const npc = allCharacters.find(char => (char.type === 'npc' || typeof char.type === 'undefined') && char._id === id); 
-                if (npc) {
-                    sceneParticipantNpcs.push(npc);
-                    conversationHistory[npc._id] = [];
-                } else {
-                    console.warn(`Scene.js: Scene NPC with ID ${id} not found in fetched characters or is not explicitly type 'npc'.`);
+            allCharacters.forEach(char => {
+                if (selectedPcIds.includes(char._id) && char.character_type === "PC") {
+                    playerCharacters.push(char);
+                } else if (selectedNpcIds.includes(char._id)) { // NPCs (or anything not PC)
+                    sceneNpcs.push(char);
+                    conversationHistory[char._id] = [];
                 }
             });
-            
-            if (selectedNpcIdsForScene.length > 0 && sceneParticipantNpcs.length === 0) {
-                if(loadingNpcsMessageEl) loadingNpcsMessageEl.textContent = 'Could not load details for any of the selected NPCs for the scene.';
-            } else if (sceneParticipantNpcs.length > 0) {
-                if(loadingNpcsMessageEl) loadingNpcsMessageEl.remove(); // Remove "Loading NPCs..."
-                createNpcInteractionInterfaces();
-            } else { 
-                 if(loadingNpcsMessageEl && selectedNpcIdsForScene.length > 0) loadingNpcsMessageEl.textContent = 'Selected NPCs not found or invalid.';
-                 else if (loadingNpcsMessageEl) loadingNpcsMessageEl.textContent = 'No scene NPCs loaded (or none selected).';
+
+            console.log('Scene.js: Player Characters list:', playerCharacters);
+            console.log('Scene.js: Scene NPCs list:', sceneNpcs);
+
+            if (playerCharacters.length === 0 && sceneNpcs.length === 0) {
+                 console.warn('Scene.js: Could not load details for any selected characters.');
+                 if(loadingNpcsMessage) loadingNpcsMessage.textContent = 'Could not load details for any selected NPCs.';
+                 if(pcDisplayArea.querySelector('p')) pcDisplayArea.querySelector('p').textContent = 'Could not load details for any selected PCs.';
+                 if(startSceneButton) startSceneButton.disabled = true;
+            } else {
+                if(loadingNpcsMessage && npcInteractionArea.contains(loadingNpcsMessage)) loadingNpcsMessage.remove();
+                const pcPlaceholder = pcDisplayArea.querySelector('p');
+                if (pcPlaceholder && pcDisplayArea.contains(pcPlaceholder)) pcPlaceholder.remove();
+                console.log('Scene.js: Calling createCharacterInterfaces...');
+                createCharacterInterfaces();
             }
         })
         .catch(error => {
-            console.error('Scene.js: Error fetching or processing characters:', error);
-            if(loadingPcsMessage) loadingPcsMessage.textContent = `Error loading PCs: ${error.message}.`;
-            if(loadingNpcsMessageEl) loadingNpcsMessageEl.textContent = `Error loading NPCs: ${error.message}.`;
+            console.error('Scene.js: Error fetching or processing character details for scene:', error);
+            if(loadingNpcsMessage && npcInteractionArea.contains(loadingNpcsMessage)) loadingNpcsMessage.textContent = `Error loading NPC details: ${error.message}. Check console.`;
+            else if(npcInteractionArea) npcInteractionArea.innerHTML = `<p style="color:red;">Error loading NPC details: ${error.message}. Check console.</p>`;
+
+            const pcPlaceholder = pcDisplayArea.querySelector('p');
+            if(pcPlaceholder && pcDisplayArea.contains(pcPlaceholder)) pcPlaceholder.textContent = `Error loading PC details: ${error.message}. Check console.`;
+            else if(pcDisplayArea) pcDisplayArea.innerHTML = `<p style="color:red;">Error loading PC details: ${error.message}. Check console.</p>`;
+
+            if(startSceneButton) startSceneButton.disabled = true;
         });
 
-    function populatePlayerCharacterList(pcs) {
-        if (!playerCharacterListUl) return;
-        playerCharacterListUl.innerHTML = ''; // Clear previous items (like loading message)
-
-        if (!pcs || pcs.length === 0) {
-            playerCharacterListUl.innerHTML = '<li class="no-pcs-found"><p>No player characters found or loaded from the database.</p></li>';
-            if(loadingPcsMessage && loadingPcsMessage.parentNode === playerCharacterListUl) { 
-                loadingPcsMessage.style.display = 'none'; 
-            }
+    function createCharacterInterfaces() { // Renamed
+        console.log('Scene.js: createCharacterInterfaces function called.');
+        if (!npcInteractionArea || !pcDisplayArea) {
+            console.error("Scene.js: npcInteractionArea or pcDisplayArea is null in createCharacterInterfaces!");
             return;
         }
+        npcInteractionArea.innerHTML = '';
+        pcDisplayArea.innerHTML = ''; // Clear PC area too
 
-        pcs.forEach(pc => {
-            if (!pc || !pc.name || !pc._id) { 
-                console.warn("Skipping PC in list due to missing name or ID:", pc);
-                return;
-            }
-            const listItem = document.createElement('li');
-            listItem.classList.add('player-character-item');
-
-            const pcHeader = document.createElement('div');
-            pcHeader.classList.add('pc-header');
-            const label = document.createElement('label');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.name = 'player_character_present';
-            checkbox.value = escapeForHtml(pc.name);
-            checkbox.dataset.pcId = escapeForHtml(pc._id); 
-            checkbox.checked = true; 
-            checkbox.addEventListener('change', updatePresentPlayerCharacters);
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode(` ${escapeForHtml(pc.name)}`));
-            pcHeader.appendChild(label);
-            listItem.appendChild(pcHeader);
-
-            const pcActionArea = document.createElement('div');
-            pcActionArea.classList.add('pc-action-area');
-            const pcActionTextarea = document.createElement('textarea');
-            pcActionTextarea.classList.add('jrpg-textarea', 'pc-action-input');
-            pcActionTextarea.rows = 2;
-            pcActionTextarea.placeholder = `Action for ${escapeForHtml(pc.name)}...`;
-            
-            const pcActionButton = document.createElement('button');
-            pcActionButton.classList.add('jrpg-button', 'jrpg-button-small', 'pc-action-submit-button');
-            pcActionButton.textContent = `Submit Action`; 
-            pcActionButton.dataset.pcName = escapeForHtml(pc.name); 
-
-            pcActionButton.addEventListener('click', () => {
-                const actionText = pcActionTextarea.value.trim();
-                const charName = pcActionButton.dataset.pcName; 
-                if (actionText) {
-                    const narrationForNpcs = `Player Action - ${charName}: ${actionText}`;
-                    
-                    currentSceneContext += `\n\n${narrationForNpcs}`; 
-                    currentSceneDescriptionDisplay.textContent = `Current Scene: ${escapeForHtml(currentSceneContext.substring(0, 150))}...`;
-
-                    sceneParticipantNpcs.forEach(activeNpc => {
-                        addDialogueEntryToNpcLog(activeNpc._id, "SYSTEM", `(GM notes ${charName}'s action: ${escapeForHtml(actionText.substring(0,50))}...)`, "system-info gm-action-log");
-                    });
-                    
-                    sceneParticipantNpcs.forEach((activeNpc, index) => {
-                        addDialogueEntryToNpcLog(activeNpc._id, activeNpc.name, `<i>...reacting to ${charName}'s action...</i>`, "npc-thinking");
-                        setTimeout(() => {
-                            fetchNpcReaction(activeNpc, narrationForNpcs); 
-                        }, index * 700 + 200); 
-                    });
-                    pcActionTextarea.value = ''; 
-                } else {
-                    alert(`Please enter an action for ${charName}.`);
+        // Render PCs
+        if (playerCharacters.length > 0) {
+            playerCharacters.forEach((pc, index) => {
+                console.log(`Scene.js: Creating interface for PC ${index + 1}:`, pc);
+                if (!pc || typeof pc._id === 'undefined' || pc.name === null || typeof pc.name === 'undefined') {
+                    console.error('Scene.js: Invalid PC data encountered (missing _id or name):', pc);
+                    const errorElement = document.createElement('div');
+                    errorElement.className = 'pc-token-error';
+                    errorElement.style.color = 'red';
+                    errorElement.textContent = 'Error loading one PC token due to invalid data.';
+                    pcDisplayArea.appendChild(errorElement);
+                    return;
+                }
+                try {
+                    const pcElement = document.createElement('div');
+                    pcElement.className = 'pc-token jrpg-box-small'; // Add some styling
+                    pcElement.dataset.pcId = pc._id;
+                    pcElement.innerHTML = `<h4>${escapeForHtml(pc.name)} (PC)</h4>`;
+                    pcDisplayArea.appendChild(pcElement);
+                } catch (e) {
+                    console.error(`Scene.js: Error creating token for PC ${pc.name || 'Unknown'}:`, e);
+                    const errorToken = document.createElement('div');
+                    errorToken.className = 'pc-token-error';
+                    errorToken.textContent = `Error for ${escapeForHtml(pc.name || 'Unknown PC')}.`;
+                    pcDisplayArea.appendChild(errorToken);
                 }
             });
-
-            pcActionArea.appendChild(pcActionTextarea);
-            pcActionArea.appendChild(pcActionButton);
-            listItem.appendChild(pcActionArea);
-            playerCharacterListUl.appendChild(listItem);
-        });
-        if(loadingPcsMessage && loadingPcsMessage.parentNode === playerCharacterListUl) {
-            loadingPcsMessage.style.display = 'none'; 
+        } else {
+            pcDisplayArea.innerHTML = '<p>No PCs selected for this scene.</p>';
         }
-        updatePresentPlayerCharacters(); 
-    }
 
-    function createNpcInteractionInterfaces() {
-        if (!npcInteractionArea) { console.error("npcInteractionArea is null in createNpcInteractionInterfaces"); return; }
-        npcInteractionArea.innerHTML = '';
-        sceneParticipantNpcs.forEach(npc => {
-            if (!npc || typeof npc._id === 'undefined' || npc.name === null || typeof npc.name === 'undefined') {
-                console.error('Scene.js: Invalid NPC data for card creation:', npc);
-                const errorContainer = document.createElement('div');
-                errorContainer.className = 'npc-dialogue-container error-card';
-                errorContainer.textContent = 'Error loading one NPC card due to invalid data.';
-                npcInteractionArea.appendChild(errorContainer);
-                return;
-            }
-            const npcContainer = document.createElement('div');
-            npcContainer.className = 'npc-dialogue-container';
-            npcContainer.dataset.npcId = npc._id;
-            const npcNameSafe = escapeForHtml(npc.name);
-            const npcIdSafe = escapeForHtml(npc._id);
-            const npcInitials = String(npc.name).substring(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '') || '??';
-            const bgColor = stringToColor(npc.name || 'default');
-            npcContainer.innerHTML = `
-                <div class="npc-header">
-                    <div class="npc-initials-placeholder" style="background-color: #${bgColor};">${npcInitials}</div>
-                    <h3 class="npc-header-name">${npcNameSafe}</h3>
-                </div>
-                <div class="npc-chat-log" id="chat-log-${npcIdSafe}"><p class="log-placeholder">Awaiting interaction...</p></div>
-                <div class="npc-dialogue-controls">
-                    <button class="jrpg-button-small btn-submit-memory" data-action="submit_memory" data-npc-id="${npcIdSafe}" title="Commit last exchange to ${npcNameSafe}'s memory">To Memory</button>
-                    <button class="jrpg-button-small btn-undo-memory" data-action="undo_memory" data-npc-id="${npcIdSafe}" title="Undo last memory submission for ${npcNameSafe}">Undo Mem</button>
-                    <button class="jrpg-button-small btn-next-topic" data-action="next_topic" data-npc-id="${npcIdSafe}" title="Advance ${npcNameSafe} to the next generated topic">Next Topic</button>
-                    <button class="jrpg-button-small btn-regen-topics" data-action="regenerate_topics" data-npc-id="${npcIdSafe}" title="Generate new conversation topics for ${npcNameSafe}">Regen Topics</button>
-                    <button class="jrpg-button-small btn-show-top5" data-action="show_top5_options" data-npc-id="${npcIdSafe}" title="Show top 5 dialogue options for ${npcNameSafe}">Top 5</button>
-                    <button class="jrpg-button-small btn-show-tree" data-action="show_tree" data-npc-id="${npcIdSafe}" title="Show conversation tree for ${npcNameSafe} (future)">Tree</button>
-                </div>
-                <div class="gm-notes-panel">
-                    <label for="gm-notes-${npcIdSafe}">GM Notes for ${npcNameSafe}:</label>
-                    <textarea id="gm-notes-${npcIdSafe}" class="gm-npc-notes-textarea jrpg-textarea" rows="3" placeholder="Notes on this NPC..."></textarea>
-                </div>`;
-            npcInteractionArea.appendChild(npcContainer);
-        });
+
+        // Render NPCs
+        if (sceneNpcs.length > 0) {
+            sceneNpcs.forEach((npc, index) => {
+                console.log(`Scene.js: Creating interface for NPC ${index + 1}:`, npc);
+                 if (!npc || typeof npc._id === 'undefined' || npc.name === null || typeof npc.name === 'undefined') {
+                    console.error('Scene.js: Invalid NPC data encountered (missing _id or name):', npc);
+                    const errorContainer = document.createElement('div');
+                    errorContainer.className = 'npc-dialogue-container';
+                    errorContainer.style.color = 'red';
+                    errorContainer.textContent = 'Error loading one NPC card due to invalid data.';
+                    npcInteractionArea.appendChild(errorContainer);
+                    return;
+                }
+
+                try {
+                    const npcContainer = document.createElement('div');
+                    npcContainer.className = 'npc-dialogue-container';
+                    npcContainer.dataset.npcId = npc._id;
+
+                    const npcNameSafe = escapeForHtml(npc.name);
+                    const npcIdSafe = escapeForHtml(npc._id);
+
+                    const npcInitials = String(npc.name).substring(0, 2).toUpperCase().replace(/[^A-Z0-9]/g, '') || '??';
+                    const bgColor = stringToColor(npc.name || 'default');
+
+                    console.log(`Scene.js: NPC Name: ${npc.name}, Initials: ${npcInitials}, Color: ${bgColor}`);
+
+                    npcContainer.innerHTML = `
+                        <div class="npc-header">
+                            <div class="npc-initials-placeholder" style="display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; background-color: #${bgColor}; color: white; font-family: 'Press Start 2P', cursive; border-radius: 4px; margin-right: 10px;">
+                                ${npcInitials}
+                            </div>
+                            <h3 class="npc-header-name" style="display: inline;">${npcNameSafe} (NPC)</h3>
+                        </div>
+                        <div class="npc-chat-log" id="chat-log-${npcIdSafe}">
+                            <p class="log-placeholder">Awaiting interaction...</p>
+                        </div>
+                        <div class="npc-dialogue-controls">
+                            <button class="jrpg-button-small btn-submit-memory" data-action="submit_memory" data-npc-id="${npcIdSafe}" title="Commit last exchange to ${npcNameSafe}'s memory">To Memory</button>
+                            <button class="jrpg-button-small btn-undo-memory" data-action="undo_memory" data-npc-id="${npcIdSafe}" title="Undo last memory submission for ${npcNameSafe}">Undo Mem</button>
+                            <button class="jrpg-button-small btn-next-topic" data-action="next_topic" data-npc-id="${npcIdSafe}" title="Advance ${npcNameSafe} to the next generated topic">Next Topic</button>
+                            <button class="jrpg-button-small btn-regen-topics" data-action="regenerate_topics" data-npc-id="${npcIdSafe}" title="Generate new conversation topics for ${npcNameSafe}">Regen Topics</button>
+                            <button class="jrpg-button-small btn-show-top5" data-action="show_top5_options" data-npc-id="${npcIdSafe}" title="Show top 5 dialogue options for ${npcNameSafe}">Top 5</button>
+                            <button class="jrpg-button-small btn-show-tree" data-action="show_tree" data-npc-id="${npcIdSafe}" title="Show conversation tree for ${npcNameSafe} (future)">Tree</button>
+                        </div>
+                    `;
+                    npcInteractionArea.appendChild(npcContainer);
+                    console.log(`Scene.js: Successfully created card for NPC ${npcNameSafe}`);
+
+                } catch (e) {
+                    console.error(`Scene.js: Error during innerHTML assignment for NPC ${npc.name || 'Unknown'}:`, e);
+                    const errorCard = document.createElement('div');
+                    errorCard.className = 'npc-dialogue-container';
+                    errorCard.style.color = 'red';
+                    errorCard.textContent = `Error creating card for ${escapeForHtml(npc.name || 'Unknown NPC')}. Check console.`;
+                    npcInteractionArea.appendChild(errorCard);
+                }
+            });
+        } else {
+             npcInteractionArea.innerHTML = '<p>No NPCs selected for this scene.</p>';
+        }
+
         addControlEventListeners();
+        console.log('Scene.js: createCharacterInterfaces finished.');
     }
 
     function stringToColor(str) {
@@ -228,222 +238,243 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addControlEventListeners() {
-        if (!npcInteractionArea) {console.error("npcInteractionArea is null in addControlEventListeners"); return;}
+        console.log('Scene.js: addControlEventListeners called.');
+        if (!npcInteractionArea) { // Event listeners are for NPC controls
+            console.warn("Scene.js: npcInteractionArea is null, cannot add NPC control event listeners!");
+            return;
+        }
         npcInteractionArea.addEventListener('click', function(event) {
             const button = event.target.closest('.jrpg-button-small[data-action]');
             if (button) {
                 const npcId = button.dataset.npcId;
                 const actionType = button.dataset.action;
-                const npc = sceneParticipantNpcs.find(p => p._id === npcId);
-                if (npc) handleNpcSpecificAction(npc, actionType, button);
-                else console.warn(`NPC data for ID: ${escapeForHtml(npcId)} not found for action: ${escapeForHtml(actionType)}.`);
+                const npc = sceneNpcs.find(p => p._id === npcId); // Search in sceneNpcs
+
+                if (npc) {
+                    handleNpcSpecificAction(npc, actionType, button);
+                } else {
+                    console.warn(`Scene.js: Could not find NPC data for ID: ${escapeForHtml(npcId)} on button click for action: ${escapeForHtml(actionType)}.`);
+                }
             }
         });
     }
 
     async function handleNpcSpecificAction(npc, actionType, buttonElement) {
         const npcNameSafe = escapeForHtml(npc.name);
-        if (actionType !== "show_top5_options" && actionType !== "next_topic" && actionType !== "regenerate_topics") {
-            addDialogueEntryToNpcLog(npc._id, "GM Action", `GM triggered: ${escapeForHtml(actionType)} for ${npcNameSafe}`, "system-info gm-action-log");
-        }
+        console.log(`Scene.js: Action '${actionType}' triggered for ${npcNameSafe} (ID: ${npc._id})`);
+        addDialogueEntryToNpcLog(npc._id, "GM Action", `GM triggered: ${escapeForHtml(actionType)} for ${npcNameSafe}`, "system-info");
+
         let payloadSpecifics = {};
         if (actionType === "submit_memory") {
-            const historyForNpc = (conversationHistory[npc._id] || []).filter(
-                e => e.speaker !== "GM Action" && !(e.type && (e.type.includes("system-info") || e.type.includes("gm-action-log")))
-            );
-            let relevantExchange = historyForNpc.length > 0 ? historyForNpc.slice(-2) : [];
+            const historyForNpc = conversationHistory[npc._id] || [];
+            let relevantExchange = [];
+            if (historyForNpc.length > 0) {
+                const lastEntry = historyForNpc[historyForNpc.length - 1];
+                if (lastEntry.speaker === npc.name && historyForNpc.length > 1) {
+                    const secondLastEntry = historyForNpc[historyForNpc.length - 2];
+                    if (secondLastEntry.speaker !== npc.name && secondLastEntry.speaker !== "GM Action") {
+                        relevantExchange.push(secondLastEntry);
+                    }
+                    relevantExchange.push(lastEntry);
+                } else if (lastEntry.speaker !== npc.name && lastEntry.speaker !== "GM Action" && historyForNpc.length > 1){
+                    const secondLastEntry = historyForNpc[historyForNpc.length - 2];
+                    if(secondLastEntry.speaker === npc.name){
+                        relevantExchange.push(lastEntry);
+                        relevantExchange.push(secondLastEntry);
+                        relevantExchange.reverse();
+                    } else {
+                         relevantExchange = historyForNpc.slice(-2).filter(e => e.speaker !== "GM Action");
+                    }
+                } else if (lastEntry.speaker !== "GM Action") {
+                     relevantExchange.push(lastEntry);
+                }
+            }
+            if (relevantExchange.length > 2) relevantExchange = relevantExchange.slice(-2);
             if (relevantExchange.length === 0) {
-                alert(`No recent significant dialogue to submit to memory for ${npcNameSafe}.`);
+                alert(`No recent dialogue to submit to memory for ${npcNameSafe}.`);
                 addDialogueEntryToNpcLog(npc._id, "SYSTEM", `No recent dialogue for memory submission.`, "system-error");
-                if (buttonElement) buttonElement.disabled = false;
                 return;
             }
             payloadSpecifics.dialogue_exchange = relevantExchange.map(entry => `${entry.speaker}: ${entry.text}`).join('\n');
             payloadSpecifics.scene_context_for_memory = currentSceneContext;
         }
+
         try {
             if (buttonElement) buttonElement.disabled = true;
-            updatePresentPlayerCharacters();
             const apiPayload = {
                 npc_id: npc._id, action_type: actionType, payload: payloadSpecifics,
                 scene_description: currentSceneContext,
-                history: (conversationHistory[npc._id] || []).slice(-10), 
-                present_player_characters: presentPlayerCharacters
+                history: conversationHistory[npc._id] ? conversationHistory[npc._id].slice(-10) : []
             };
-            const response = await fetch('/api/dialogue/npc_action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(apiPayload) });
+
+            const response = await fetch('/api/dialogue/npc_action', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(apiPayload)
+            });
             if (buttonElement) buttonElement.disabled = false;
             const responseData = await response.json();
-            if (!response.ok) throw new Error(responseData.error || responseData.message || `Action '${actionType}' failed with status ${response.status}`);
-            addDialogueEntryToNpcLog(npc._id, "SYSTEM", responseData.message || `Action '${escapeForHtml(actionType)}' for ${npcNameSafe} processed.`, "system-success");
+            if (!response.ok) throw new Error(responseData.error || responseData.message || `Action '${actionType}' failed`);
+
+            let systemMessage = responseData.message || `Action '${escapeForHtml(actionType)}' for ${npcNameSafe} processed.`;
+            addDialogueEntryToNpcLog(npc._id, "SYSTEM", systemMessage, "system-success");
+
             if (responseData.data) {
                 if (responseData.action === "next_topic" || responseData.action === "regenerate_topics") {
-                    if (responseData.data.new_topics && responseData.data.new_topics.length > 0) displayDialogueOptionsForNpc(npc._id, responseData.data.new_topics, "Suggested Topics (click for NPC to elaborate):", "topic");
-                    else addDialogueEntryToNpcLog(npc._id, "SYSTEM", "No new topics were generated.", "system-info");
+                    if (responseData.data.new_topics && responseData.data.new_topics.length > 0) {
+                        addDialogueEntryToNpcLog(npc._id, "AI Topics", "Suggested Topics:\n- " + responseData.data.new_topics.join("\n- "), "system-info");
+                        displayDialogueOptionsForNpc(npc._id, responseData.data.new_topics, "Suggested Topics (click to use as input):");
+                    } else { addDialogueEntryToNpcLog(npc._id, "SYSTEM", "No new topics were generated.", "system-info"); }
                 } else if (responseData.action === "show_top5_options") {
-                    if (responseData.data.dialogue_options && responseData.data.dialogue_options.length > 0) displayDialogueOptionsForNpc(npc._id, responseData.data.dialogue_options, "AI Suggested Next Lines (click to make NPC say):", "dialogue_line");
-                    else addDialogueEntryToNpcLog(npc._id, "SYSTEM", "No dialogue options were generated.", "system-info");
+                     if (responseData.data.dialogue_options && responseData.data.dialogue_options.length > 0) {
+                        displayDialogueOptionsForNpc(npc._id, responseData.data.dialogue_options, "AI Suggested Next Lines (click to make NPC say):");
+                     } else { addDialogueEntryToNpcLog(npc._id, "SYSTEM", "No dialogue options were generated.", "system-info"); }
                 }
             }
         } catch (error) {
-            console.error(`Error during NPC action '${actionType}' for ${npcNameSafe}:`, error);
+            console.error(`Scene.js: Error during NPC action '${actionType}' for ${npcNameSafe}:`, error);
             addDialogueEntryToNpcLog(npc._id, "SYSTEM", `Error with action '${escapeForHtml(actionType)}': ${error.message}`, "system-error");
-            if (buttonElement) buttonElement.disabled = false;
+            if(buttonElement) buttonElement.disabled = false;
         }
     }
 
-    function updatePresentPlayerCharacters() {
-        presentPlayerCharacters = [];
-        if (playerCharacterListUl) {
-            const checkboxes = playerCharacterListUl.querySelectorAll('input[name="player_character_present"]:checked');
-            checkboxes.forEach(checkbox => presentPlayerCharacters.push(checkbox.value));
+    startSceneButton.addEventListener('click', () => {
+        console.log('Scene.js: Start Scene button clicked.');
+        const sceneDescriptionInput = sceneDescriptionTextarea.value.trim();
+        if (sceneNpcs.length === 0) { // Actions primarily target NPCs
+             alert('No NPCs are currently part of the scene to interact with.');
+             // You might still want to set scene context if PCs are present
+             if (playerCharacters.length > 0 && sceneDescriptionInput) {
+                currentSceneContext = sceneDescriptionInput;
+                currentSceneDescriptionDisplay.textContent = `Current Scene: ${escapeForHtml(currentSceneContext)}`;
+                addDialogueEntryToNpcLog(null, "SYSTEM", `Scene context (PCs only): "${escapeForHtml(currentSceneContext.substring(0,100))}..."`, "system", true); // Log globally if no NPCs
+                sceneDescriptionTextarea.value = "";
+             }
+             return;
         }
-        console.log("Scene.js: Updated Present PCs:", presentPlayerCharacters);
-    }
+        if (!sceneDescriptionInput) { alert('Please describe the scene or provide narration before initiating.'); sceneDescriptionTextarea.focus(); return; }
 
-    function handleSceneStartOrNarration(isInitialNarration = false) {
-        const narrationInput = (isInitialNarration ? sceneDescriptionTextarea.value : ongoingNarrationTextarea.value).trim();
-        if (sceneParticipantNpcs.length === 0 && selectedNpcIdsForScene.length > 0) { 
-            alert('Scene NPCs are selected but not loaded. Check console for errors.'); return; 
-        }
-        // Allow scene start if no NPCs are selected, for GM-only narration or PC-to-PC.
-        // if (sceneParticipantNpcs.length === 0 && selectedNpcIdsForScene.length === 0) { 
-        //     alert('No NPCs are part of the scene. Please select NPCs from the dashboard and ensure they load.'); return; 
-        // }
-        
-        if (!narrationInput) {
-            alert(isInitialNarration ? 'Please describe the initial scene before starting.' : 'Please enter some narration or player action.');
-            (isInitialNarration ? sceneDescriptionTextarea : ongoingNarrationTextarea).focus(); return;
-        }
+        currentSceneContext = sceneDescriptionInput;
+        currentSceneDescriptionDisplay.textContent = `Current Scene: ${escapeForHtml(currentSceneContext)}`;
 
-        if (isInitialNarration) {
-            currentSceneContext = narrationInput; 
-        } else {
-            currentSceneContext += `\n\nGM Narration/Player Action: ${narrationInput}`; 
-        }
-        currentSceneDescriptionDisplay.textContent = `Current Scene: ${escapeForHtml(currentSceneContext.substring(0, 150))}...`;
-        updatePresentPlayerCharacters(); 
+        sceneNpcs.forEach(npc => {
+            const logContainer = document.getElementById(`chat-log-${npc._id}`);
+            if (logContainer) {
+                logContainer.innerHTML = '';
+                addDialogueEntryToNpcLog(npc._id, "SYSTEM", `Scene context: "${escapeForHtml(currentSceneContext.substring(0,100))}..."`, "system");
+                conversationHistory[npc._id] = [{ speaker: "SYSTEM", text: `Scene context: "${currentSceneContext}"` }];
+            }
+        });
 
-        if(sceneParticipantNpcs.length > 0) {
-            sceneParticipantNpcs.forEach(npc => {
-                if (isInitialNarration) { 
-                    const logContainer = document.getElementById(`chat-log-${npc._id}`);
-                    if(logContainer) logContainer.innerHTML = ''; 
-                    conversationHistory[npc._id] = [{ speaker: "SYSTEM", text: `Initial scene context: "${currentSceneContext}"`, type: "system" }];
-                }
-                addDialogueEntryToNpcLog(npc._id, "SYSTEM", `${isInitialNarration ? 'Initial S' : 'S'}cene Update: "${escapeForHtml(narrationInput.substring(0,100))}..."`, "system");
-            });
+        sceneNpcs.forEach((npc, index) => {
+            addDialogueEntryToNpcLog(npc._id, npc.name, "<i>...formulating a response...</i>", "npc-thinking");
+            setTimeout(() => {
+                console.log(`Scene.js: Fetching initial dialogue for ${escapeForHtml(npc.name)} (ID: ${npc._id})`);
+                fetchNpcInitialDialogue(npc, currentSceneContext);
+            }, index * 700 + 400);
+        });
+        sceneDescriptionTextarea.value = "";
+    });
 
-            sceneParticipantNpcs.forEach((npc, index) => {
-                addDialogueEntryToNpcLog(npc._id, npc.name, `<i>...formulating a response to the latest update...</i>`, "npc-thinking");
-                setTimeout(() => fetchNpcReaction(npc, narrationInput), index * 700 + 400); 
-            });
-        } else {
-            console.log("Scene started/updated without any active NPCs to react.");
-        }
-
-        if (isInitialNarration) sceneDescriptionTextarea.value = ""; 
-        ongoingNarrationTextarea.value = ""; 
-    }
-
-    startSceneButton.addEventListener('click', () => handleSceneStartOrNarration(true));
-    submitOngoingNarrationButton.addEventListener('click', () => handleSceneStartOrNarration(false));
-
-    async function fetchNpcReaction(npc, latestNarrationOrAction) {
+    async function fetchNpcInitialDialogue(npc, sceneDescForCall) {
         const npcId = npc._id;
         const npcLogContainer = document.getElementById(`chat-log-${npcId}`);
-        if (npcLogContainer) { 
-            const thinkingMsg = npcLogContainer.querySelector('.chat-entry.npc-thinking');
-            if (thinkingMsg) thinkingMsg.remove();
+        if (npcLogContainer) {
+            const thinkingMessageEntry = npcLogContainer.querySelector('.chat-entry.npc-thinking');
+            if(thinkingMessageEntry) thinkingMessageEntry.remove();
         }
         try {
-            updatePresentPlayerCharacters(); 
-            const payload = {
-                npc_id: npcId, scene_context: currentSceneContext, 
-                latest_narration: latestNarrationOrAction, 
-                history: (conversationHistory[npcId] || []).slice(-10),
-                present_player_characters: presentPlayerCharacters
-            };
-            const response = await fetch('/api/dialogue/generate_npc_line', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const payload = { npc_id: npcId, scene_context: sceneDescForCall, history: conversationHistory[npcId] ? conversationHistory[npcId].slice(-10) : [] };
+            const response = await fetch('/api/dialogue/generate_npc_line', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', }, body: JSON.stringify(payload),
+            });
             if (!response.ok) {
-                let errDetail = "NPC reaction failed.";
-                try { const errData = await response.json(); errDetail = errData.detail || errData.error || `Server responded with ${response.status}`; } catch (e) { errDetail = `Server responded with ${response.status} and non-JSON error.`; }
-                throw new Error(errDetail);
+                let errorDetail = "Failed to fetch initial dialogue.";
+                try { const errorData = await response.json(); errorDetail = errorData.detail || errorData.error || `Server status ${response.status}`; } catch (e) { errorDetail = `Server status ${response.status}, non-JSON error.`; }
+                throw new Error(errorDetail);
             }
             const data = await response.json();
             if (data.dialogue_text) addDialogueEntryToNpcLog(npcId, npc.name, data.dialogue_text, "npc");
-            else addDialogueEntryToNpcLog(npcId, "SYSTEM", "AI could not generate a response for " + escapeForHtml(npc.name), "system-error");
+            else addDialogueEntryToNpcLog(npcId, "SYSTEM", "AI could not generate an initial response for " + escapeForHtml(npc.name), "system-error");
         } catch (error) {
-            console.error(`Error fetching reaction for ${escapeForHtml(npc.name)} (ID: ${npcId}):`, error);
+            console.error(`Scene.js: Error fetching initial dialogue for ${escapeForHtml(npc.name)} (ID: ${npcId}):`, error);
             addDialogueEntryToNpcLog(npcId, "SYSTEM", `Error for ${escapeForHtml(npc.name)}: ${error.message}`, "system-error");
         }
     }
 
-    function addDialogueEntryToNpcLog(npcId, speakerName, text, type = "npc") {
-        const logContainer = document.getElementById(`chat-log-${npcId}`);
-        if (!logContainer) { console.error(`Chat log container for NPC ID ${npcId} not found! Cannot add entry.`); return; }
-        const placeholder = logContainer.querySelector('.log-placeholder');
-        if (placeholder) placeholder.remove(); 
+    function addDialogueEntryToNpcLog(npcId, speakerName, text, type = "npc", globalForPCsOnly = false) {
+        let logContainer;
+        if (globalForPCsOnly && !npcId) { // Log to a general area if no specific NPC and it's a global PC context
+            logContainer = document.getElementById('pc-display-area'); // Or a dedicated global log if you add one
+             if(logContainer && logContainer.innerHTML.includes("PCs will appear here")) logContainer.innerHTML = ""; // Clear placeholder
+        } else {
+             logContainer = document.getElementById(`chat-log-${npcId}`);
+        }
+
+        if (!logContainer) {
+            if (!globalForPCsOnly) console.error(`Chat log container for NPC ID ${npcId} not found!`);
+            else console.error(`PC Display area not found for global log!`);
+            return;
+        }
         const entryDiv = document.createElement('div');
         const typeClass = type.startsWith('system') ? 'system-message' : type;
         entryDiv.classList.add('chat-entry', typeClass);
-        if (type === "gm-action-log" || (type === "system-info" && speakerName === "GM Action") || speakerName === "GM Choice") {
-             entryDiv.classList.add('gm-action-entry');
-        }
 
         let bubbleHtml = `<div class="chat-bubble">`;
         const speakerNameSafe = escapeForHtml(speakerName);
-        if (type !== "npc" || type === "npc-thinking" || type.startsWith("system") || entryDiv.classList.contains('gm-action-entry')) {
-            bubbleHtml += `<span class="speaker-name">${speakerNameSafe}:</span>`;
+        if (type !== "npc" || type === "npc-thinking" || type.startsWith("system")) {
+            bubbleHtml += `<span class="speaker-name">${speakerNameSafe}</span>`;
         }
-        const displayText = (type === "npc-thinking" && text.includes("<i>")) ? text : escapeForHtml(text);
-        bubbleHtml += `<p class="dialogue-text">${displayText.replace(/\n/g, '<br>')}</p></div>`; 
+
+        if (type === "npc-thinking" && text.includes("<i>")) {
+             bubbleHtml += `<p class="dialogue-text">${text.replace(/\n/g, '<br>')}</p>`; // Don't escape <i>
+        } else {
+            const displayText = escapeForHtml(text);
+            bubbleHtml += `<p class="dialogue-text">${displayText.replace(/\n/g, '<br>')}</p>`;
+        }
+        bubbleHtml += `</div>`;
         entryDiv.innerHTML = bubbleHtml;
 
-        const isSignificantForHistory = (type === "npc" || type === "gm" || speakerName === "GM Choice" ||
-            (type === "system" && (text.toLowerCase().includes("scene context:") || text.toLowerCase().includes("scene update:") ) ) );
-        
-        if (isSignificantForHistory && !(type === "system-info" && speakerName === "GM Action")) { 
+        if (!globalForPCsOnly && npcId && (type === "npc" || type === "gm" || (type === "system" && speakerName === "SYSTEM" && text.startsWith("Scene context:")) )) {
              if (!conversationHistory[npcId]) conversationHistory[npcId] = [];
-             conversationHistory[npcId].push({ speaker: speakerName, text: text, type: type }); 
+             if (!(type === "system-info" && speakerName === "GM Action")) { // Don't add functional GM actions to AI history
+                conversationHistory[npcId].push({ speaker: speakerName, text: text }); // Store original text for history
+             }
         }
+        // Clear placeholder from NPC log if it exists
+        const placeholder = logContainer.querySelector('.log-placeholder');
+        if(placeholder) placeholder.remove();
+
         logContainer.appendChild(entryDiv);
-        logContainer.scrollTop = logContainer.scrollHeight; 
+        logContainer.scrollTop = logContainer.scrollHeight;
     }
 
-    function displayDialogueOptionsForNpc(npcId, options, title = "Suggested Options:", optionType = "generic") {
+    function displayDialogueOptionsForNpc(npcId, options, title = "Suggested Options:") {
         const logContainer = document.getElementById(`chat-log-${npcId}`);
         if (!logContainer || !options || options.length === 0) return;
         const existingOptions = logContainer.querySelector('.dialogue-options-container');
-        if (existingOptions) existingOptions.remove(); 
+        if(existingOptions) existingOptions.remove();
         const optionsContainer = document.createElement('div');
         optionsContainer.className = 'dialogue-options-container';
-        const titleEl = document.createElement('p');
-        titleEl.className = 'dialogue-options-title';
-        titleEl.textContent = escapeForHtml(title);
-        optionsContainer.appendChild(titleEl);
+        const titleElement = document.createElement('p');
+        titleElement.className = 'dialogue-options-title';
+        titleElement.textContent = escapeForHtml(title);
+        optionsContainer.appendChild(titleElement);
         options.forEach(optionText => {
-            const optButton = document.createElement('button');
-            optButton.className = 'jrpg-button-small dialogue-option';
-            optButton.textContent = escapeForHtml(optionText.length > 70 ? optionText.substring(0, 67) + "..." : optionText); 
-            optButton.title = escapeForHtml(optionText); 
-            optButton.addEventListener('click', () => {
-                const npcToRespond = sceneParticipantNpcs.find(p => p._id === npcId);
+            const optionButton = document.createElement('button');
+            optionButton.className = 'jrpg-button-small dialogue-option';
+            optionButton.textContent = escapeForHtml(optionText);
+            optionButton.addEventListener('click', () => {
+                addDialogueEntryToNpcLog(npcId, "GM Choice", `Selected: "${optionText}"`, "gm");
+                const npcToRespond = sceneNpcs.find(p => p._id === npcId);
                 if (npcToRespond) {
-                    if (optionType === "dialogue_line") { 
-                        addDialogueEntryToNpcLog(npcId, "GM Choice", `GM selected line for ${escapeForHtml(npcToRespond.name)}: "${escapeForHtml(optionText)}"`, "gm-action-log");
-                        addDialogueEntryToNpcLog(npcId, npcToRespond.name, optionText, "npc"); 
-                    } else if (optionType === "topic") { 
-                        addDialogueEntryToNpcLog(npcId, "GM Choice", `GM prompts ${escapeForHtml(npcToRespond.name)} to discuss: "${escapeForHtml(optionText)}"`, "gm-action-log");
-                        addDialogueEntryToNpcLog(npcId, npcToRespond.name, `<i>...preparing to discuss "${escapeForHtml(optionText.substring(0,30))}..."</i>`, "npc-thinking");
-                        fetchNpcReaction(npcToRespond, `Please elaborate on the topic: "${optionText}"`); 
-                    }
+                    addDialogueEntryToNpcLog(npcId, npcToRespond.name, `<i>...reacting to GM's choice: "${escapeForHtml(optionText.substring(0,30))}..."</i>`, "npc-thinking");
+                    fetchNpcInitialDialogue(npcToRespond, optionText); // NPC reacts to the chosen option
                 }
-                optionsContainer.remove(); 
+                optionsContainer.remove();
             });
-            optionsContainer.appendChild(optButton);
+            optionsContainer.appendChild(optionButton);
         });
         logContainer.appendChild(optionsContainer);
         logContainer.scrollTop = logContainer.scrollHeight;
     }
-    console.log('Scene.js: Script loaded and all event listeners should be active.');
-}); // End of DOMContentLoaded
+    console.log('Scene.js: Script loaded and event listeners should be active.');
+});

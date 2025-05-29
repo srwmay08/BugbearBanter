@@ -11,41 +11,34 @@
 <body>
     <div class="page-container scene-page-container">
         <header class="jrpg-header">
-            <h1>Scene in Progress</h1>
-            <p id="current-scene-description-display">Current Scene: Not yet started.</p>
+            <h1>Scene Interaction</h1>
+            <nav>
+                <a href="/dashboard.html" class="jrpg-button-small">Back to Dashboard</a>
+                <a href="/npc-selector.html" class="jrpg-button-small">Change Characters</a>
+            </nav>
         </header>
 
-<main class="scene-main-content">
-        <div class="scene-top-section">
-            <div class="narration-column">
-                <div class="jrpg-box scene-setup-area">
-                    <h2>Initial Scene Description & Narration</h2>
-                    <textarea id="scene-description-textarea" class="jrpg-textarea" rows="3" placeholder="Describe the initial scene..."></textarea> <button id="start-scene-button" class="jrpg-button">Start Scene / Narrate</button>
-                </div>
-                <div class="jrpg-box ongoing-narration-area">
-                    <h2>Ongoing Narration / Player Action</h2>
-                    <textarea id="ongoing-narration-textarea" class="jrpg-textarea" rows="2" placeholder="Enter player actions..."></textarea>
-                    <button id="submit-ongoing-narration-button" class="jrpg-button jrpg-button-small">Submit Narration</button>
+        <main class="scene-main-content">
+            <div class="scene-setup-area jrpg-box">
+                <h2>Scene Narration / GM Input</h2>
+                <textarea id="scene-description-textarea" class="jrpg-textarea" placeholder="Describe the current situation, or enter dialogue for a PC or the GM..."></textarea>
+                <button id="start-scene-button" class="jrpg-button">Initiate Scene / Narrate</button>
+                <div id="current-scene-description-display" class="current-scene-text">
+                    Scene not yet started.
                 </div>
             </div>
-            <div class="player-characters-column">
-                <div class="jrpg-box player-characters-selection">
-                    <h2>Player Characters Present</h2>
-                    <ul id="player-character-list">
-                        <p id="loading-pcs-message">Loading player characters...</p>
-                    </ul>
-                </div>
-            </div>
-        </div>
 
-        <div id="npc-interaction-area" class="npc-interaction-grid">
-            <p class="loading-npcs-message">Loading NPCs for the scene...</p>
-        </div>
-    </main>
+            <div id="pc-display-area" class="pc-info-bar jrpg-box">
+                <p>Selected PCs will appear here.</p>
+            </div>
+
+            <div id="npc-interaction-area" class="npc-grid-container">
+                <p class="loading-npcs-message">Loading NPC details...</p>
+                </div>
+        </main>
 
         <footer class="jrpg-footer">
-            <p>Bugbear Banter</p>
-            <a href="/dashboard" class="jrpg-button-small">Back to Dashboard</a>
+            <p>&copy; Bugbear Banter</p>
         </footer>
     </div>
     <script src="/static/js/scene.js"></script>

@@ -1,5 +1,5 @@
 {
-  "type": "npc",
+  "character_type": "npc",
   "name": "Ontharr Frume",
   "race": "Human",
   "class": "Paladin",

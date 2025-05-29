@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Characters for Scene - Bugbear Banter</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css"> <style>
+        .character-selection-area { margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 8px; }
+        .character-selection-area h2 { margin-top: 0; }
+        .character-list { list-style-type: none; padding: 0; }
+        .character-list li { margin-bottom: 8px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; }
+        .character-list label { margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <header class="jrpg-header">
+            <h1>Scene Setup: Select Characters</h1>
+            <nav>
+                <a href="/dashboard.html" class="jrpg-button-small">Back to Dashboard</a>
+            </nav>
+        </header>
+
+        <main class="dashboard-main-content">
+            <div class="jrpg-box character-selection-area">
+                <h2>Select Player Characters (PCs)</h2>
+                <div id="pc-selection-list">
+                    <p>Loading PCs...</p>
+                </div>
+            </div>
+
+            <div class="jrpg-box character-selection-area">
+                <h2>Select Non-Player Characters (NPCs)</h2>
+                <div id="npc-selection-list">
+                    <p>Loading NPCs...</p>
+                </div>
+            </div>
+
+            <button id="start-scene-btn" class="jrpg-button">Start Scene with Selected Characters</button>
+        </main>
+
+        <footer class="jrpg-footer">
+            <p>Bugbear Banter</p>
+        </footer>
+    </div>
+    <script src="/static/js/npc-selector.js"></script>
+</body>
+</html>
