@@ -24,6 +24,7 @@ def get_combined_npcs():
         global_npcs_cursor = npc_collection.find({"$or": [{"user_id": {"$exists": False}}, {"user_id": None}]})
         for npc in global_npcs_cursor:
             npc_id_str = str(npc['_id'])
+<<<<<<< HEAD
             npc['_id'] = npc_id_str
             if npc.get('user_id'):
                  npc['user_id'] = str(npc['user_id'])
@@ -31,6 +32,13 @@ def get_combined_npcs():
                 npc['memories'] = []
             if 'character_type' not in npc: # Ensure character_type exists
                 npc['character_type'] = 'NPC' # Default to NPC if not specified
+=======
+            npc['_id'] = npc_id_str 
+            if npc.get('user_id'): 
+                 npc['user_id'] = str(npc['user_id'])
+            if 'memories' not in npc: # Ensure memories field exists for frontend if ever needed, though primarily backend
+                npc['memories'] = []
+>>>>>>> main
             npcs_list.append(npc)
             processed_ids.add(npc_id_str)
 
@@ -40,12 +48,19 @@ def get_combined_npcs():
                 npc_id_str = str(npc['_id'])
                 if npc_id_str not in processed_ids:
                     npc['_id'] = npc_id_str
+<<<<<<< HEAD
                     if 'user_id' in npc:
                         npc['user_id'] = str(npc['user_id'])
                     if 'memories' not in npc: # Ensure memories field exists
                         npc['memories'] = []
                     if 'character_type' not in npc: # Ensure character_type exists
                         npc['character_type'] = 'NPC' # Default to NPC if not specified
+=======
+                    if 'user_id' in npc: 
+                        npc['user_id'] = str(npc['user_id'])
+                    if 'memories' not in npc: # Ensure memories field exists
+                        npc['memories'] = []
+>>>>>>> main
                     npcs_list.append(npc)
                     processed_ids.add(npc_id_str)
 
@@ -60,16 +75,26 @@ def get_combined_npcs():
 def get_single_npc(npc_id_str):
     try:
         npc_collection = mongo.db[NPC_COLLECTION_NAME]
+<<<<<<< HEAD
 
         npc_data = npc_collection.find_one({"_id": npc_id_str})
 
+=======
+        
+        npc_data = npc_collection.find_one({"_id": npc_id_str})
+        
+>>>>>>> main
         if not npc_data and ObjectId.is_valid(npc_id_str):
             npc_data = npc_collection.find_one({"_id": ObjectId(npc_id_str)})
 
         if not npc_data:
             return jsonify({"error": "Character not found"}), 404
 
+<<<<<<< HEAD
         is_global = not npc_data.get("user_id")
+=======
+        is_global = not npc_data.get("user_id") 
+>>>>>>> main
         is_owner = npc_data.get("user_id") == current_user.get_id()
 
         if not (is_global or is_owner):
@@ -80,9 +105,13 @@ def get_single_npc(npc_id_str):
             npc_data['user_id'] = str(npc_data['user_id'])
         if 'memories' not in npc_data: # Ensure memories field exists
             npc_data['memories'] = []
+<<<<<<< HEAD
         if 'character_type' not in npc_data: # Ensure character_type exists
             npc_data['character_type'] = 'NPC' # Default to NPC
 
+=======
+            
+>>>>>>> main
         return jsonify(npc_data), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching single character {npc_id_str}: {e}", exc_info=True)
@@ -108,11 +137,19 @@ def upload_npc_route():
 
             npc_collection = mongo.db[NPC_COLLECTION_NAME]
             users_collection = mongo.db[USERS_COLLECTION_NAME]
+<<<<<<< HEAD
             npc_id = str(uuid.uuid4())
 
             npc_doc = {
                 '_id': npc_id,
                 'user_id': current_user.get_id(),
+=======
+            npc_id = str(uuid.uuid4()) 
+            
+            npc_doc = {
+                '_id': npc_id, 
+                'user_id': current_user.get_id(), 
+>>>>>>> main
                 'name': npc_data_raw.get('name'),
                 'character_type': npc_data_raw.get('character_type', 'NPC'), # Added character_type
                 'race': npc_data_raw.get('race'),
@@ -130,25 +167,42 @@ def upload_npc_route():
                 'past_situation': npc_data_raw.get('past_situation'),
                 'current_situation': npc_data_raw.get('current_situation'),
                 'relationships_with_pcs': npc_data_raw.get('relationships_with_pcs'),
+<<<<<<< HEAD
                 'appearance': npc_data_raw.get('appearance', 'No description available.'),
+=======
+                'appearance': npc_data_raw.get('appearance', 'No description available.'), 
+>>>>>>> main
                 'source_file': file.filename,
                 'memories': [] # Initialize memories as an empty list
             }
             npc_doc_cleaned = {k: v for k, v in npc_doc.items() if v is not None}
 
             npc_collection.insert_one(npc_doc_cleaned)
+<<<<<<< HEAD
 
             users_collection.update_one(
                 {"_id": current_user.get_id()},
                 {"$addToSet": {"npc_ids": npc_id}}
+=======
+            
+            users_collection.update_one(
+                {"_id": current_user.get_id()}, 
+                {"$addToSet": {"npc_ids": npc_id}} 
+>>>>>>> main
             )
             if hasattr(current_user, 'npc_ids') and isinstance(current_user.npc_ids, list) and npc_id not in current_user.npc_ids:
                 current_user.npc_ids.append(npc_id)
 
             created_npc = npc_collection.find_one({"_id": npc_id})
+<<<<<<< HEAD
             if created_npc:
                  created_npc['_id'] = str(created_npc['_id'])
                  if 'user_id' in created_npc:
+=======
+            if created_npc: 
+                 created_npc['_id'] = str(created_npc['_id'])
+                 if 'user_id' in created_npc: 
+>>>>>>> main
                      created_npc['user_id'] = str(created_npc['user_id'])
                  if 'character_type' not in created_npc: # Ensure character_type is present for response
                      created_npc['character_type'] = npc_doc_cleaned.get('character_type', 'NPC')
@@ -173,8 +227,13 @@ def update_npc(npc_id_str):
         if not npc_data_to_update:
             return jsonify({"error": "No update data provided"}), 400
 
+<<<<<<< HEAD
         query_id_str = npc_id_str
 
+=======
+        query_id_str = npc_id_str 
+        
+>>>>>>> main
         existing_npc = npc_collection.find_one({"_id": query_id_str})
 
         if not existing_npc:
@@ -191,6 +250,14 @@ def update_npc(npc_id_str):
         
         update_payload = {k: v for k, v in npc_data_to_update.items() if k not in ['_id', 'user_id']}
 
+<<<<<<< HEAD
+=======
+        npc_data_to_update.pop('_id', None)
+        npc_data_to_update.pop('user_id', None) 
+        # Ensure memories field is not accidentally overwritten if not included in update payload
+        # Typically, memories would be managed by specific actions, not general PUT.
+        # If 'memories' is in npc_data_to_update, it will be set. If not, it remains unchanged by $set.
+>>>>>>> main
 
         result = npc_collection.update_one(
             {"_id": query_id_str, "user_id": current_user.get_id()},
@@ -205,16 +272,25 @@ def update_npc(npc_id_str):
                 unchanged_npc['_id'] = str(unchanged_npc['_id'])
                 if 'user_id' in unchanged_npc: unchanged_npc['user_id'] = str(unchanged_npc['user_id'])
                 if 'memories' not in unchanged_npc: unchanged_npc['memories'] = []
+<<<<<<< HEAD
                 if 'character_type' not in unchanged_npc: unchanged_npc['character_type'] = 'NPC'
                 return jsonify({"message": "Character data was the same, no changes made.", "npc": unchanged_npc}), 200
             else:
                 return jsonify({"error": "Character found but could not retrieve after no-modification update."}), 500
+=======
+                return jsonify({"message": "NPC data was the same, no changes made.", "npc": unchanged_npc}), 200
+            else: 
+                return jsonify({"error": "NPC found but could not retrieve after no-modification update."}), 500
+>>>>>>> main
 
         updated_npc = npc_collection.find_one({"_id": query_id_str})
         updated_npc['_id'] = str(updated_npc['_id'])
         if 'user_id' in updated_npc: updated_npc['user_id'] = str(updated_npc['user_id'])
         if 'memories' not in updated_npc: updated_npc['memories'] = [] # Ensure it's present
+<<<<<<< HEAD
         if 'character_type' not in updated_npc: updated_npc['character_type'] = 'NPC' # Ensure it's present
+=======
+>>>>>>> main
 
         return jsonify({"message": "Character updated successfully", "npc": updated_npc}), 200
     except Exception as e:
@@ -228,7 +304,11 @@ def delete_npc(npc_id_str):
         npc_collection = mongo.db[NPC_COLLECTION_NAME]
         users_collection = mongo.db[USERS_COLLECTION_NAME]
 
+<<<<<<< HEAD
         query_id_str = npc_id_str
+=======
+        query_id_str = npc_id_str 
+>>>>>>> main
 
         npc_to_delete = npc_collection.find_one({"_id": query_id_str, "user_id": current_user.get_id()})
 
@@ -252,5 +332,10 @@ def delete_npc(npc_id_str):
 
         return jsonify({"message": f"Character with ID {npc_id_str} deleted successfully"}), 200
     except Exception as e:
+<<<<<<< HEAD
         current_app.logger.error(f"Error deleting character {npc_id_str}: {e}", exc_info=True)
         return jsonify({"error": "Failed to delete character."}), 500
+=======
+        current_app.logger.error(f"Error deleting NPC {npc_id_str}: {e}", exc_info=True)
+        return jsonify({"error": "Failed to delete NPC."}), 500
+>>>>>>> main

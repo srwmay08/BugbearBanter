@@ -47,7 +47,11 @@ class User:
 
 # ... (NPC, GameWorld, Scene models - consider adding user_id to NPC)
 class NPC:
+<<<<<<< HEAD
     def __init__(self, name, appearance=None, personality_traits=None, backstory=None, motivations=None, flaws=None, race=None, npc_class=None, source_file=None, is_soul_npc=False, main_npc_id_if_soul=None, user_id=None, _id=None, speech_patterns=None, mannerisms=None, past_situation=None, current_situation=None, relationships_with_pcs=None, memories=None, character_type="NPC"): # Added user_id and other fields from JSON, Added memories, Added character_type
+=======
+    def __init__(self, name, appearance=None, personality_traits=None, backstory=None, motivations=None, flaws=None, race=None, npc_class=None, source_file=None, is_soul_npc=False, main_npc_id_if_soul=None, user_id=None, _id=None, speech_patterns=None, mannerisms=None, past_situation=None, current_situation=None, relationships_with_pcs=None, memories=None): # Added user_id and other fields from JSON, Added memories
+>>>>>>> main
         self._id = _id
         self.user_id = user_id # Link NPC to a user
         self.name = name
@@ -67,14 +71,21 @@ class NPC:
         self.current_situation = current_situation
         self.relationships_with_pcs = relationships_with_pcs
         self.memories = memories if memories is not None else [] # Initialize memories as an empty list
+<<<<<<< HEAD
         self.character_type = character_type # "PC" or "NPC"
+=======
+>>>>>>> main
 
 
     def to_dict(self):
         data = {
             "name": self.name,
             "appearance": self.appearance,
+<<<<<<< HEAD
             "personality_traits": self.personality_traits,
+=======
+            "personality_traits": self.personality_traits, 
+>>>>>>> main
             "backstory": self.backstory,
             "motivations": self.motivations,
             "flaws": self.flaws,
@@ -85,8 +96,12 @@ class NPC:
             "past_situation": self.past_situation,
             "current_situation": self.current_situation,
             "relationships_with_pcs": self.relationships_with_pcs,
+<<<<<<< HEAD
             "memories": self.memories, # Include memories
             "character_type": self.character_type # Include character_type
+=======
+            "memories": self.memories # Include memories
+>>>>>>> main
             # Add other fields as needed
         }
         if self._id:
