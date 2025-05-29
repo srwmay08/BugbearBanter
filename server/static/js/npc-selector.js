@@ -33,11 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
         allCharacters.forEach(char => {
             const listItemHtml = `
                 <li>
-                    <input type="checkbox" id="char-${char._id}" name="character_select" value="${char._id}" data-type="${char.character_type || 'NPC'}">
-                    <label for="char-${char._id}">${char.name || 'Unnamed Character'}</label>
-                </li>`;
-
-            if (char.character_type === 'PC') {
+                    <input type="checkbox" id="char-<span class="math-inline">\{char\.\_id\}" name\="character\_select" value\="</span>{char._id}" data-type="<span class="math-inline">\{char\.character\_type \|\| 'NPC'\}"\><label for="char-{char._id}">${char.name || 'Unnamed Character'}</label></li>`;
+ if (char.character_type === 'PC') {
                 pcHtml += listItemHtml;
                 pcCount++;
             } else {
@@ -50,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
         npcHtml += '</ul>';
 
         if (pcSelectionListDiv) {
-            pcSelectionListDiv.innerHTML = pcCount > 0 ? pcHtml : '<p>No PCs available.</p>';
+            pcSelectionListDiv.innerHTML = pcCount > 0 ? pcHtml : '<p>No PCs available. Ensure they have "character_type": "PC" in the database.</p>';
         }
         if (npcSelectionListDiv) {
             npcSelectionListDiv.innerHTML = npcCount > 0 ? npcHtml : '<p>No NPCs available.</p>';
@@ -75,9 +72,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             //Navigate to scene.html with pc_ids and npc_ids as URL parameters
-            window.location.href = `/scene.html?pc_ids=${selectedPcIds.join(',')}&npc_ids=${selectedNpcIds.join(',')}`;
+            window.location.href = `/scene.html?pc_ids=<span class="math-inline">\{selectedPcIds\.join\(','\)\}&npc\_ids\=</span>{selectedNpcIds.join(',')}`;
         });
     }
 
     loadCharacters();
 });
+```
