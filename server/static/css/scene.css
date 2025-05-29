@@ -2,277 +2,284 @@
 
 .scene-page-container {
     max-width: 1400px; /* Allow wider view for multiple NPC columns */
+    padding-top: 10px; /* Reduce top padding of the page */
+}
+
+/* Reduce overall vertical spacing for scene setup elements */
+.scene-page-container .jrpg-header {
+    margin-bottom: 15px; 
+    padding: 10px 10px; 
 }
 
 .scene-main-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px; /* Reduced gap */
 }
 
-.scene-setup-area, .ongoing-narration-area, .player-characters-selection {
+.scene-main-content > .jrpg-box { /* Applies to direct children jrpg-boxes if not in columns */
+    padding: 15px;
     margin-bottom: 15px;
 }
 
-.ongoing-narration-area textarea {
-    min-height: 50px;
-}
-#submit-ongoing-narration-button {
-    margin-top: 10px;
+/* For the top section containing narration and PC list */
+.scene-top-section {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 15px; /* Space between columns */
+    margin-bottom: 15px; /* Space before NPC interaction area */
 }
 
-.player-characters-selection ul {
+.narration-column { /* Container for initial and ongoing narration */
+    flex: 3; /* Takes more space */
+    min-width: 320px; /* Adjust as needed */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between narration boxes */
+}
+.narration-column .jrpg-box {
+    margin-bottom: 0; /* Remove bottom margin as gap is handled by flex */
+    padding: 10px; /* Slightly reduce padding */
+}
+.narration-column textarea { /* More specific targeting for textareas in this column */
+    min-height: 40px; /* Reduce min-height */
+    font-size: 0.95em;
+}
+.narration-column #scene-description-textarea {
+    min-height: 60px; /* Initial scene description can be a bit taller */
+}
+
+
+.player-characters-column { /* Container for PC list */
+    flex: 2; /* Takes less space than narration */
+    min-width: 280px; /* Adjust as needed */
+    display: flex; /* To make the jrpg-box inside fill height if needed */
+    flex-direction: column;
+}
+.player-characters-column .jrpg-box {
+     margin-bottom: 0;
+     padding: 10px;
+     display: flex;
+     flex-direction: column;
+     flex-grow: 1; /* Make the box grow */
+}
+
+#player-character-list { /* The UL element */
     list-style-type: none;
     padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
+    margin: 0; /* Remove default ul margin */
+    max-height: 40vh; /* Example: Max 40% of viewport height, adjust as needed */
+    overflow-y: auto;
+    padding-right: 5px; /* Space for scrollbar, if needed */
+    flex-grow: 1; /* Allow list to take available space in its container */
 }
-.player-characters-selection li label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
+.player-character-list .no-pcs-found p {
+    padding: 10px 0;
+    text-align: center;
+    font-style: italic;
+    color: #aaa;
 }
 
 
-#npc-interaction-area.npc-interaction-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Adjust minmax for desired card width */
-    gap: 20px;
-    padding-top: 15px;
+/* Player Character Item Styling (from your existing CSS, with minor tweaks for compactness) */
+.player-character-item {
+    border: 1px solid #4a4166;
+    padding: 8px; /* Reduced padding */
+    margin-bottom: 8px; /* Reduced margin */
+    border-radius: 4px;
+    background-color: #353148; 
+}
+
+.pc-header {
+    margin-bottom: 6px; /* Reduced margin */
+}
+
+.pc-header label {
+    font-weight: bold;
+    color: #e0d090;
+    font-size: 0.95em; /* Slightly smaller PC name label */
+}
+.pc-header input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.pc-action-area {
+    margin-top: 6px; /* Reduced margin */
+    padding-top: 6px; /* Reduced margin */
     border-top: 1px dashed #4a4166;
 }
 
+.pc-action-input { /* Extends jrpg-textarea */
+    width: calc(100% - 16px); /* Account for padding */
+    min-height: 30px; /* More compact */
+    font-size: 0.9em; /* Smaller font */
+    margin-bottom: 5px; /* Reduced margin */
+    padding: 5px 8px; /* Reduced padding */
+}
+
+.pc-action-submit-button { /* Extends jrpg-button-small */
+    width: 100%;
+    padding: 5px 8px; /* Smaller button padding */
+    font-size: 0.8em; /* Smaller button font */
+}
+
+/* NPC Interaction Area - ensure it starts as high as possible */
+#npc-interaction-area.npc-interaction-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* Slightly smaller min card width */
+    gap: 15px; /* Reduced gap */
+    padding-top: 0; 
+    border-top: none; 
+}
+
 .npc-dialogue-container {
-    background-color: #3c3852; /* From .jrpg-box */
+    background-color: #3c3852;
     border: 2px solid #574f77;
-    padding: 15px;
+    padding: 10px; /* Reduced padding */
     border-radius: 6px;
     box-shadow: inset 0 0 8px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Space between elements inside the card */
+    gap: 8px; 
 }
 .npc-dialogue-container.error-card {
     background-color: #523838;
     color: #f0a0a0;
 }
 
-
 .npc-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding-bottom: 10px;
+    gap: 8px; /* Reduced gap */
+    padding-bottom: 8px; /* Reduced padding */
     border-bottom: 1px solid #4a4166;
 }
 
 .npc-initials-placeholder {
-    width: 40px;
-    height: 40px;
-    line-height: 40px;
-    text-align: center;
-    color: white;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 0.9em;
-    border-radius: 4px;
-    flex-shrink: 0;
+    width: 35px; /* Slightly smaller */
+    height: 35px;
+    line-height: 35px;
+    font-size: 0.8em; 
 }
 
 .npc-header-name {
     font-family: 'Press Start 2P', cursive;
     color: #e0d090;
-    font-size: 1.1em;
-    margin: 0;
+    font-size: 1em; /* Slightly smaller */
 }
 
 .npc-chat-log {
     background-color: rgba(0,0,0,0.15);
     border: 1px solid #2f2c40;
     border-radius: 4px;
-    padding: 10px;
-    min-height: 150px;
-    max-height: 300px; /* Control height */
+    padding: 8px; /* Reduced padding */
+    min-height: 100px; /* Adjusted */
+    max-height: 220px; /* Adjusted - fine-tune based on testing */
     overflow-y: auto;
-    font-size: 0.95em;
-    line-height: 1.5;
-    flex-grow: 1; /* Allow chat log to take available space */
+    font-size: 0.9em; 
+    line-height: 1.4; 
+    flex-grow: 1; 
 }
 .npc-chat-log .log-placeholder {
     color: #888;
     font-style: italic;
     text-align: center;
-    padding-top: 20px;
+    padding-top: 15px;
 }
 
 .chat-entry {
-    margin-bottom: 8px;
+    margin-bottom: 6px; /* Reduced margin */
 }
 .chat-entry .chat-bubble {
-    padding: 6px 10px;
-    border-radius: 5px;
-    max-width: 90%;
+    padding: 5px 8px; /* Reduced padding */
+    max-width: 95%; /* Can be a bit wider if needed */
 }
 .chat-entry .speaker-name {
-    font-weight: bold;
-    color: #b0b0c0; /* Lighter grey for subtitles from style.css */
-    display: block;
-    margin-bottom: 3px;
-    font-size: 0.9em;
+    margin-bottom: 2px; 
+    font-size: 0.85em; 
 }
-.chat-entry.npc .chat-bubble { /* NPC's own speech */
-    background-color: #4a4660; /* A bit lighter than card bg */
-    margin-left: auto; /* Align to right for NPC */
+/* (Rest of your chat bubble styles for npc, gm, system messages can remain as they are, or you can compact their padding too) */
+.chat-entry.npc .chat-bubble { 
+    background-color: #4a4660; 
+    margin-left: auto; 
     text-align: left;
 }
-.chat-entry.npc .chat-bubble .speaker-name { /* Hide speaker name if it's the NPC card's owner */
-    /* display: none; */ /* Or style differently if preferred */
+.chat-entry.npc .chat-bubble .speaker-name {
      color: #d0c080;
 }
-
 .chat-entry.gm .chat-bubble,
-.chat-entry.gm-action-entry .chat-bubble { /* GM's input/choice */
-    background-color: #303942; /* Different color for GM */
-    margin-right: auto; /* Align to left for GM */
+.chat-entry.gm-action-entry .chat-bubble,
+.chat-entry.gm-action-log .chat-bubble { /* Added .gm-action-log */
+    background-color: #303942; 
+    margin-right: auto; 
     text-align: left;
 }
 .chat-entry.gm .chat-bubble .speaker-name,
-.chat-entry.gm-action-entry .chat-bubble .speaker-name {
+.chat-entry.gm-action-entry .chat-bubble .speaker-name,
+.chat-entry.gm-action-log .chat-bubble .speaker-name {
     color: #8bb9dc;
 }
-
-
 .chat-entry.system-message .chat-bubble {
     background-color: transparent;
     border: 1px dashed #4a4166;
     color: #a0a0a0;
     font-style: italic;
-    font-size: 0.85em;
-    text-align: center;
-    padding: 5px;
+    font-size: 0.8em; /* Smaller system messages */
+    padding: 4px;
 }
-.chat-entry.system-message .speaker-name {
-    color: #9090a0;
-    text-align: center;
-}
-
-.chat-entry.system-error .chat-bubble {
-    border-color: #803030;
-    color: #d99797;
-}
-.chat-entry.system-success .chat-bubble {
-    border-color: #308030;
-    color: #97d997;
-}
-
-
-.chat-entry.npc-thinking .dialogue-text {
-    font-style: italic;
-    color: #aaa;
-}
+/* ... (other chat entry styles) ... */
 
 .npc-dialogue-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    padding-top: 10px;
+    gap: 6px; /* Reduced gap */
+    padding-top: 8px; 
     border-top: 1px solid #4a4166;
 }
 .npc-dialogue-controls .jrpg-button-small {
-    flex-grow: 1; /* Allow buttons to take up space */
-    font-size: 0.85em; /* Slightly smaller for more buttons */
-    padding: 6px 10px;
+    flex-grow: 1; 
+    font-size: 0.8em; /* Even smaller for more buttons */
+    padding: 5px 8px; 
 }
 
 .gm-notes-panel {
-    margin-top: 10px;
-    padding-top: 10px;
+    margin-top: 8px; 
+    padding-top: 8px; 
     border-top: 1px dashed #4a4166;
 }
 .gm-notes-panel label {
-    display: block;
-    font-size: 0.9em;
-    color: #b0b0c0;
-    margin-bottom: 5px;
+    font-size: 0.85em; 
+    margin-bottom: 3px; 
 }
 .gm-npc-notes-textarea {
-    width: calc(100% - 20px); /* Adjust for padding */
-    font-size: 0.9em;
-    min-height: 40px;
+    width: calc(100% - 16px); 
+    font-size: 0.85em; 
+    min-height: 30px; /* More compact */
+    rows: 2;
 }
 
 .dialogue-options-container {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 4px;
+    margin-top: 8px; 
+    padding: 8px; 
 }
 .dialogue-options-title {
-    font-size: 0.9em;
-    color: #c0c0c0;
-    margin-bottom: 8px;
-    font-weight: bold;
+    font-size: 0.85em; 
+    margin-bottom: 6px; 
 }
 .dialogue-option {
-    display: block;
-    width: calc(100% - 10px); /* Full width button */
-    margin: 5px auto;
-    text-align: left;
-    background-color: #403c52; /* Darker than normal small button */
-}
-.dialogue-option:hover {
-    background-color: #504c66;
+    width: calc(100% - 8px); 
+    margin: 4px auto; 
+    padding: 5px 8px; /* Compact dialogue option buttons */
+    font-size: 0.85em;
 }
 
-/* Scrollbar for chat log */
-.npc-chat-log::-webkit-scrollbar {
-    width: 8px;
-}
-.npc-chat-log::-webkit-scrollbar-track {
-    background: #2f2c40;
-    border-radius: 4px;
-}
-.npc-chat-log::-webkit-scrollbar-thumb {
-    background: #574f77;
-    border-radius: 4px;
-}
-.npc-chat-log::-webkit-scrollbar-thumb:hover {
-    background: #6a6292;
-}
+/* Scrollbar styles (no changes needed unless they take too much space) */
+.npc-chat-log::-webkit-scrollbar { width: 8px; }
+.npc-chat-log::-webkit-scrollbar-track { background: #2f2c40; border-radius: 4px; }
+.npc-chat-log::-webkit-scrollbar-thumb { background: #574f77; border-radius: 4px; }
+.npc-chat-log::-webkit-scrollbar-thumb:hover { background: #6a6292; }
 
-/* static/css/scene.css */
-/* ... (existing scene.css styles) ... */
-
-.player-character-item {
-    border: 1px solid #4a4166; /* Softer border from style.css */
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    background-color: #353148; /* Slightly different from NPC cards */
-}
-
-.pc-header {
-    margin-bottom: 8px;
-}
-
-.pc-header label {
-    font-weight: bold;
-    color: #e0d090; /* JRPG gold text */
-}
-
-.pc-action-area {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed #4a4166;
-}
-
-.pc-action-input { /* Extends jrpg-textarea */
-    width: calc(100% - 22px); /* Account for padding */
-    min-height: 40px;
-    margin-bottom: 8px;
-}
-
-.pc-action-submit-button { /* Extends jrpg-button-small */
-    width: 100%;
-}
+#player-character-list::-webkit-scrollbar { width: 8px; }
+#player-character-list::-webkit-scrollbar-track { background: #2f2c40; border-radius: 4px; }
+#player-character-list::-webkit-scrollbar-thumb { background: #574f77; border-radius: 4px; }
+#player-character-list::-webkit-scrollbar-thumb:hover { background: #6a6292; }
